@@ -23,7 +23,7 @@ mkdir -p "$EFI_KEYS_DIR"
 # Main program
 case "$1" in
   create)
-    cd "$EFI_KEYS_DIR"
+    cd "$EFI_KEYS_DIR" || { echo "You have to specify EFI_KEYS_DIR!"; exit; }
 
     if [[ -f KEK.esl ]] || [[ -f db.esl  ]] || [[ -f PK.auth  ]]; then
         echo "UEFI Secure Boot keys in '$EFI_KEYS_DIR' already exists!"
@@ -38,36 +38,43 @@ case "$1" in
     read -p "Enter a Common Name: " NAME
     echo "$NAME" > NAME
 
-    openssl req -new -x509 -newkey rsa:2048 -subj "/CN=$NAME PK/" -keyout PK.key \
-                -out PK.crt -days 3650 -nodes -sha256
-    openssl req -new -x509 -newkey rsa:2048 -subj "/CN=$NAME KEK/" -keyout KEK.key \
-                -out KEK.crt -days 3650 -nodes -sha256
-    openssl req -new -x509 -newkey rsa:2048 -subj "/CN=$NAME db/" -keyout db.key \
-                -out db.crt -days 3650 -nodes -sha256
+    openssl req -newkey rsa:4096 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME PK/" -out PK.crt
+    openssl req -newkey rsa:4096 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME PK/" -out KEK.crt
+    openssl req -newkey rsa:4096 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME PK/" -out db.crt
 
-    openssl x509 -in PK.crt -out PK.cer -outform DER
-    openssl x509 -in KEK.crt -out KEK.cer -outform DER
-    openssl x509 -in db.crt -out db.cer -outform DER
+    openssl x509 -outform DER -in PK.crt -out PK.cer
+    openssl x509 -outform DER -in db.crt -out db.cer
+    openssl x509 -outform DER -in db.crt -out db.cer
 
     GUID="$(uuidgen --random)"
+    MS_GUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
     echo "$GUID" > GUID
 
-    cert-to-efi-sig-list -g $GUID PK.crt PK.esl
-    cert-to-efi-sig-list -g $GUID KEK.crt KEK.esl
-    cert-to-efi-sig-list -g $GUID db.crt db.esl
+    cert-to-efi-sig-list -g "$GUID" PK.crt PK.esl
+    cert-to-efi-sig-list -g "$GUID" KEK.crt KEK.esl
+    cert-to-efi-sig-list -g "$GUID" db.crt db.esl
 
     echo -n > PK_null.esl
 
-    sign-efi-sig-list -k PK.key -c PK.crt PK PK.esl PK.auth
-    sign-efi-sig-list -k PK.key -c PK.crt PK PK_null.esl PK_null.auth
+    ## Add Microsoft Corporation UEFI CA 2011 certificate to support option ROMs
+    if [[ ! -f MS_OpROM.crt ]]
+    then
+      curl https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt > MS_OpROM_db.crt
+      sbsiglist --owner "$MS_GUID" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
+    fi
+    sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK.esl PK.auth
+    sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK_null.esl PK_null.auth
+    sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
+    sign-efi-sig-list -g "$GUID" -k KEK.key -c KEK.crt db db.esl db.auth
+    sign-efi-sig-list -g "$MS_GUID" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
 
-    chmod 0400 *.{key,auth}
+    chmod 0400 ./*.{key,auth}
     sync
 
     echo "New UEFI Secure Boot keys created in '$EFI_KEYS_DIR'"
     ;;
   enroll)
-    cd "$EFI_KEYS_DIR"
+    cd "$EFI_KEYS_DIR" || { echo "You have to specify EFI_KEYS_DIR!"; exit; }
 
     if ! [[ -f KEK.esl ]] || ! [[ -f db.esl  ]] || ! [[ -f PK.auth  ]]; then
         echo "There are no UEFI Secure Boot keys in '$EFI_KEYS_DIR'!"
@@ -84,11 +91,14 @@ case "$1" in
     echo "Enrolling UEFI Secure Boot PK key..."
     efi-updatevar -f PK.auth PK
 
+    echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
+    efi-updatevar -a -e -f MS_OpROM_db.esl db
+
     echo "UEFI Secure Boot keys in '$EFI_KEYS_DIR' enrolled to UEFI firmware."
     echo "You should now sign your boot loader and reboot!"
     ;;
   sign)
-    cd "$EFI_KEYS_DIR"
+    cd "$EFI_KEYS_DIR" || { echo "You have to specify EFI_KEYS_DIR!"; exit; }
 
     filename="$2"
     if [[ -z "$filename" ]]; then
@@ -107,7 +117,7 @@ case "$1" in
     sync
     ;;
   verify)
-    cd "$EFI_KEYS_DIR"
+    cd "$EFI_KEYS_DIR" || { echo "You have to specify EFI_KEYS_DIR!"; exit; }
 
     filename="$2"
     if [[ -z "$filename" ]]; then
