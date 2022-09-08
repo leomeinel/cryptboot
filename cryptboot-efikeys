@@ -32,6 +32,7 @@ case "$1" in
         if [[ "$key" != "y" ]] && [[ "$key" != "Y" ]]; then
           exit 1
         fi
+        rm -rf "$EFI_KEYS_DIR"/*
     fi
 
     echo "Creating new UEFI Secure Boot keys..."
