@@ -84,17 +84,17 @@ case "$1" in
         exit 1
     fi
 
-    if [[ -f /sys/firmware/efi/efivars/PK* ]]
+    if ls -la /sys/firmware/efi/efivars/PK*
     then
       chattr -i /sys/firmware/efi/efivars/PK*
     fi
 
-    if [[ -f /sys/firmware/efi/efivars/KEK* ]]
+    if ls -la /sys/firmware/efi/efivars/KEK*
     then
       chattr -i /sys/firmware/efi/efivars/KEK*
     fi
 
-    if [[ -f /sys/firmware/efi/efivars/db* ]]
+    if ls -la /sys/firmware/efi/efivars/db*
     then
       chattr -i /sys/firmware/efi/efivars/db*
     fi
