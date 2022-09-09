@@ -70,7 +70,7 @@ case "$1" in
     # OpROMs
     sign-efi-sig-list -g "$MS_GUID" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
 
-    chmod 0400 ./*.{key,auth}
+    chmod 0400 "$EFI_KEYS_DIR"/*
     sync
 
     echo "New UEFI Secure Boot keys created in '$EFI_KEYS_DIR'"
