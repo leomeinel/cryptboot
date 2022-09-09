@@ -84,6 +84,21 @@ case "$1" in
         exit 1
     fi
 
+    if [[ -f /sys/firmware/efi/efivars/PK* ]]
+    then
+      chattr -i /sys/firmware/efi/efivars/PK*
+    fi
+
+    if [[ -f /sys/firmware/efi/efivars/KEK* ]]
+    then
+      chattr -i /sys/firmware/efi/efivars/KEK*
+    fi
+
+    if [[ -f /sys/firmware/efi/efivars/db* ]]
+    then
+      chattr -i /sys/firmware/efi/efivars/db*
+    fi
+
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -e -f KEK.esl KEK
 
