@@ -25,7 +25,7 @@ case "$1" in
   create)
     cd "$EFI_KEYS_DIR" || { echo "You have to specify EFI_KEYS_DIR!"; exit; }
 
-    if [[ -f KEK.esl ]] || [[ -f db.esl  ]] || [[ -f PK.auth  ]]; then
+    if ls -la "$EFI_KEYS_DIR"/*; then
         echo "UEFI Secure Boot keys in '$EFI_KEYS_DIR' already exists!"
         read -n1 -r -s -p "Do you want to delete them and generate new ones [y/N]? " key
         echo
