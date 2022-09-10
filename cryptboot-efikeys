@@ -104,6 +104,11 @@ case "$1" in
 
     echo "Enrolling UEFI Secure Boot db key..."
     efi-updatevar -e -f db.esl db
+    
+    if ls -la /sys/firmware/efi/efivars/db*
+    then
+      chattr -i /sys/firmware/efi/efivars/db*
+    fi
 
     echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
     efi-updatevar -a -e -f MS_OpROM_db.esl db
