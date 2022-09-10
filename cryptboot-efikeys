@@ -32,7 +32,7 @@ case "$1" in
         if [[ "$key" != "y" ]] && [[ "$key" != "Y" ]]; then
           exit 1
         fi
-        rm -rf "$EFI_KEYS_DIR"/*
+        rm -rf ${EFI_KEYS_DIR:?}/*
     fi
 
     echo "Creating new UEFI Secure Boot keys..."
@@ -49,7 +49,7 @@ case "$1" in
 
     GUID="$(uuidgen --random)"
     echo "$GUID" > GUID
-    MS_GUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
+    MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
     echo "$MSGUID" > MSGUID
 
     cert-to-efi-sig-list -g "$GUID" PK.crt PK.esl
@@ -60,7 +60,7 @@ case "$1" in
 
     # OpROMs
     curl https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt > MS_OpROM_db.crt
-    sbsiglist --owner "$MS_GUID" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
+    sbsiglist --owner "$MSGUID" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
 
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK.esl PK.auth
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK_null.esl PK_null.auth
@@ -68,7 +68,7 @@ case "$1" in
     sign-efi-sig-list -g "$GUID" -k KEK.key -c KEK.crt db db.esl db.auth
 
     # OpROMs
-    sign-efi-sig-list -g "$MS_GUID" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
+    sign-efi-sig-list -g "$MSGUID" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
 
     chmod 0400 "$EFI_KEYS_DIR"/*
     sync
