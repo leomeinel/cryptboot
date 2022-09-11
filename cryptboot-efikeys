@@ -59,7 +59,7 @@ case "$1" in
     echo -n > PK_null.esl
 
     # OpROMs
-    curl https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt > MS_OpROM_db.crt
+    curl -s https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt > MS_OpROM_db.crt
     sbsiglist --owner "$MSGUID" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
 
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK.esl PK.auth
