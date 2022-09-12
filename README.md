@@ -1,10 +1,8 @@
-cryptboot
-=========
+# cryptboot
 
 Encrypted boot partition manager with UEFI Secure Boot support
 
-Description
------------
+## Description
 
 With encrypted boot partition, nobody can see or modify your kernel image or initramfs.
 GRUB boot loader supports booting from encrypted boot partition, but you would be
@@ -18,8 +16,7 @@ modified boot loader (not signed by your keys) and whole attack is prevented.
 
 `cryptboot` simply makes this easy and manageable.
 
-Requirements
-------------
+## Requirements
 
 - Linux (x86_64)
 - UEFI firmware with enabled Secure Boot
@@ -33,10 +30,10 @@ Requirements
 
 On Arch Linux, use `sudo pacman -S efitools sbsigntools efibootmgr`.
 
-Installation
-------------
+## Installation
 
 0. Before you enroll your own keys, you can backup the ones which are currently deployed
+
 ```bash
 efi-readvar -v PK -o old_PK.esl
 efi-readvar -v KEK -o old_KEK.esl
@@ -44,43 +41,42 @@ efi-readvar -v db -o old_db.esl
 efi-readvar -v dbx -o old_dbx.esl
 ```
 
-1. Install your favorite Linux distribution with separate `/boot` partition encrypted with LUKS.
-   Refer to your distributions documentation, there is e.g. guide for Arch Linux:
+1.  Install your favorite Linux distribution with separate `/boot` partition encrypted with LUKS.
+    Refer to your distributions documentation, there is e.g. guide for Arch Linux:
 
-   [Encrypted boot partition (GRUB)](https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Encrypted_boot_partition_.28GRUB.29)
+    [Encrypted boot partition (GRUB)](https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Encrypted_boot_partition_.28GRUB.29)
 
-2. Boot into UEFI firmware setup utility (frequently but incorrectly referred to as "BIOS"),
-   enable *Secure Boot* and clear all preloaded Secure Boot keys (Microsoft and OEM).
-   By clearing all Secure Boot keys, you will enter into *Setup Mode*
-   (so you can enroll your own Secure Boot keys later).
+2.  Boot into UEFI firmware setup utility (frequently but incorrectly referred to as "BIOS"),
+    enable _Secure Boot_ and clear all preloaded Secure Boot keys (Microsoft and OEM).
+    By clearing all Secure Boot keys, you will enter into _Setup Mode_
+    (so you can enroll your own Secure Boot keys later).
 
-   You must also set your UEFI firmware *supervisor password*, so nobody
-   can simply boot into UEFI setup utility and turn off Secure Boot.
+    You must also set your UEFI firmware _supervisor password_, so nobody
+    can simply boot into UEFI setup utility and turn off Secure Boot.
 
-3. Boot into your Linux distribution and mount `/boot` partition and EFI System partition:
+3.  Boot into your Linux distribution and mount `/boot` partition and EFI System partition:
 
         cryptboot mount
 
-4. Generate your new UEFI Secure Boot keys:
+4.  Generate your new UEFI Secure Boot keys:
 
         cryptboot-efikeys create
 
-5. Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
+5.  Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
 
         cryptboot-efikeys enroll
 
-6. Update GRUB boot loader (it will be automatically signed with your new UEFI Secure Boot keys):
+6.  Update GRUB boot loader (it will be automatically signed with your new UEFI Secure Boot keys):
 
         cryptboot update-grub
 
-7. Unmount `/boot` partition and EFI System partition:
+7.  Unmount `/boot` partition and EFI System partition:
 
         cryptboot umount
 
-8. Reboot your system, you should be completely secured against evil maid attacks from now on!
+8.  Reboot your system, you should be completely secured against evil maid attacks from now on!
 
-Usage
------
+## Usage
 
 After installation, usage of `cryptboot` is as simple as running:
 
@@ -91,16 +87,14 @@ with distributions package manager, update and sign GRUB boot loader and finally
 unmount `/boot` partition and EFI System partition.
 We hook the call to `grub-install` by putting a simple `grub-install` script into `/usr/local/bin` to call `cryptboot update-grub`. This will prevent failing to boot if someone (or a script) calls `grub-install` without signing the bootloader afterwards.
 
-
-Help
-----
+## Help
 
 **cryptboot**
 
     Usage: cryptboot {mount|umount|update-grub|upgrade}
-    
+
     Encrypted boot partition manager with UEFI Secure Boot support
-    
+
     Commands:
         mount        Unlock and mount your encrypted boot partition and EFI System partition
         umount       Unmount and lock your encrypted boot partition and EFI System partition
@@ -110,9 +104,9 @@ Help
 **cryptboot-efikeys**
 
     Usage: cryptboot-efikeys {create,enroll,sign,verify,list} [file-to-sign-or-verify]
-    
+
     Manage UEFI Secure Boot keys
-    
+
     Commands:
         create  Generate new UEFI Secure Boot keys
         enroll  Enroll new UEFI Secure Boot keys to your UEFI firmware
@@ -127,32 +121,31 @@ Help
     # Encrypted boot device name (/dev/mapper/$BOOT_CRYPT_NAME)
     # (have to be specified in /etc/crypttab)
     BOOT_CRYPT_NAME="cryptboot"
-    
+
     # Boot partition mount point (have to be specified in /etc/fstab)
     BOOT_DIR="/boot"
-    
+
     # EFI System partition mount point (have to be specified in /etc/fstab)
     EFI_DIR="/boot/efi"
-    
+
     # Default boot loader (only GRUB is supported for now)
     BOOT_LOADER="GRUB"
-    
+
     # Boot entry in UEFI Boot Manager (if using GRUB boot loader)
     EFI_ID_GRUB="GRUB"
-    
+
     # Path to GRUB boot loader EFI file (relative to EFI System partition)
     EFI_PATH_GRUB="EFI/grub/grubx64.efi"
-    
+
     # UEFI Secure Boot keys directory
     EFI_KEYS_DIR="/boot/efikeys"
-    
+
     # Command run to upgrade system packages
     PKG_UPGRADE_CMD="pacman -Syu"
 
-
 ## Limitations
 
-- If there is backdoor in your UEFI firmware, you are out of luck. It is *GAME OVER*.
+- If there is backdoor in your UEFI firmware, you are out of luck. It is _GAME OVER_.
 
   Old laptops unfortunately regularly had backdoors in BIOS:
 
@@ -162,10 +155,10 @@ Help
   Lenovo ThinkPads (there are no known backdoor passwords and Lenovo is reportedly
   replacing whole system board if user forgets his supervisor password).
 
-- You should never use same UEFI firmware *supervisor password* as your encryption password,
+- You should never use same UEFI firmware _supervisor password_ as your encryption password,
   because on some old laptops, supervisor password could be recovered as plaintext
   from EEPROM chip.
-  
+
   New Lenovo ThinkPads (T440, T450, T540, X1 Carbon gen2/3, X240, X250, W540, W541, W550
   and newer models) should be safe, see e.g. this presentation:
 
@@ -198,7 +191,7 @@ Help
 
 - Encrypted boot partition (GRUB) - https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#Encrypted_boot_partition_(GRUB)
 - UEFI (Secure_Boot) - https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
-- How to boot Linux using UEFI with Secure Boot?  - https://ubs_csse.gitlab.io/secu_os/tutorials/linux_secure_boot.html
+- How to boot Linux using UEFI with Secure Boot? - https://ubs_csse.gitlab.io/secu_os/tutorials/linux_secure_boot.html
 
 ## Fixing: error: verification requested but nobody cares: (cryptouuid/$PARTITION_UUID)/grub/x86_64-efi/normal.mod
 
