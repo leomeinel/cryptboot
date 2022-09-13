@@ -34,7 +34,7 @@ On Arch Linux, use `sudo pacman -S efitools sbsigntools efibootmgr`.
 
 0. Before you enroll your own keys, you can backup the ones which are currently deployed
 
-```bash
+```sh
 efi-readvar -v PK -o old_PK.esl
 efi-readvar -v KEK -o old_KEK.esl
 efi-readvar -v db -o old_db.esl
