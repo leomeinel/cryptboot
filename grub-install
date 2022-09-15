@@ -12,7 +12,7 @@
 set -eu
 
 # this will
-# 1) call grub-mkconfig
-# 2) call grub-install
+# 1) call grub-install
+# 2) call grub-mkconfig
 # 3) sign the bootloader
 cryptboot update-grub
