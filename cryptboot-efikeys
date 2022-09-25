@@ -149,58 +149,6 @@ sign)
     fi
     echo "Signing file '$filename' with UEFI Secure Boot keys..."
     sbsign --key db.key --cert db.crt --output "$filename" "$filename"
-    echo "Signing modules with UEFI Secure Boot keys..."
-    if pacman -Qq "linux"; then
-        sbsign --key db.key --cert db.crt --output /boot/vmlinuz-linux /boot/vmlinuz-linux
-        readarray -t LINUX_MODULES < <(/usr/bin/find /lib/modules/$(pacman -Q linux | sed 's/linux//;s/.arch/-arch/' | tr -d "[:space:]") -type f -name '*.ko*')
-        for ((i = 0; i < "${#LINUX_MODULES[@]}"; i++)); do
-            {
-                LINUX_MODULE="${LINUX_MODULES[$i]}"
-                zstd -d "${LINUX_MODULES[$i]}" -fq --rm
-                LINUX_MODULE="${LINUX_MODULE:0:-4}"
-                /usr/src/linux/scripts/sign-file sha256 db.key db.crt "$LINUX_MODULE"
-                zstd -z "$LINUX_MODULE" -fq --rm
-            } ||
-                {
-                    echo "ERROR: modules couldn't be signed with UEFI Secure Boot keys"
-                    exit 1
-                }
-        done
-    fi
-    if pacman -Qq "linux-lts"; then
-        sbsign --key db.key --cert db.crt --output /boot/vmlinuz-linux-lts /boot/vmlinuz-linux-lts
-        readarray -t LINUX_MODULES < <(/usr/bin/find /lib/modules/$(pacman -Q linux-lts | sed 's/linux-lts//' | tr -d "[:space:]")-lts -type f -name '*.ko*')
-        for ((i = 0; i < "${#LINUX_MODULES[@]}"; i++)); do
-            {
-                LINUX_MODULE="${LINUX_MODULES[$i]}"
-                zstd -d "${LINUX_MODULES[$i]}" -fq --rm
-                LINUX_MODULE="${LINUX_MODULE:0:-4}"
-                /usr/src/linux/scripts/sign-file sha256 db.key db.crt "$LINUX_MODULE"
-                zstd -z "$LINUX_MODULE" -fq --rm
-            } ||
-                {
-                    echo "ERROR: modules couldn't be signed with UEFI Secure Boot keys"
-                    exit 1
-                }
-        done
-    fi
-    if pacman -Qq "linux-zen"; then
-        sbsign --key db.key --cert db.crt --output /boot/vmlinuz-linux-zen /boot/vmlinuz-linux-zen
-        readarray -t LINUX_MODULES < <(/usr/bin/find /lib/modules/$(pacman -Q linux-zen | sed 's/linux-zen//;s/.zen/-zen/' | tr -d "[:space:]")-zen -type f -name '*.ko*')
-        for ((i = 0; i < "${#LINUX_MODULES[@]}"; i++)); do
-            {
-                LINUX_MODULE="${LINUX_MODULES[$i]}"
-                zstd -d "${LINUX_MODULES[$i]}" -fq --rm
-                LINUX_MODULE="${LINUX_MODULE:0:-4}"
-                /usr/src/linux/scripts/sign-file sha256 db.key db.crt "$LINUX_MODULE"
-                zstd -z "$LINUX_MODULE" -fq --rm
-            } ||
-                {
-                    echo "ERROR: modules couldn't be signed with UEFI Secure Boot keys"
-                    exit 1
-                }
-        done
-    fi
     sync
     ;;
 verify)
