@@ -54,12 +54,10 @@ create)
     openssl req -newkey rsa:4096 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME PK/" -out PK.crt
     openssl req -newkey rsa:4096 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME KEK/" -out KEK.crt
     openssl req -newkey rsa:4096 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME db/" -out db.crt
-    openssl req -newkey rsa:4096 -nodes -keyout MOK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME MOK/" -out MOK.crt
 
     openssl x509 -outform DER -in PK.crt -out PK.cer
     openssl x509 -outform DER -in KEK.crt -out KEK.cer
     openssl x509 -outform DER -in db.crt -out db.cer
-    openssl x509 -outform DER -in MOK.crt -out MOK.cer
 
     GUID="$(uuidgen --random)"
     echo "$GUID" >GUID
@@ -69,7 +67,6 @@ create)
     cert-to-efi-sig-list -g "$GUID" PK.crt PK.esl
     cert-to-efi-sig-list -g "$GUID" KEK.crt KEK.esl
     cert-to-efi-sig-list -g "$GUID" db.crt db.esl
-    cert-to-efi-sig-list -g "$GUID" MOK.crt MOK.esl
 
     echo -n >PK_null.esl
 
@@ -81,7 +78,6 @@ create)
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK_null.esl PK_null.auth
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
     sign-efi-sig-list -g "$GUID" -k KEK.key -c KEK.crt db db.esl db.auth
-    sign-efi-sig-list -g "$GUID" -k MOK.key -c MOK.crt MOK MOK.esl MOK.auth
 
     # OpROMs
     sign-efi-sig-list -g "$MSGUID" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
