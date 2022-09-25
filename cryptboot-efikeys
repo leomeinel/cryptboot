@@ -150,6 +150,10 @@ sign)
 
     echo "Signing file '$filename' with UEFI Secure Boot keys..."
     sbsign --key db.key --cert db.crt --output "$filename" "$filename"
+    # TODO: Get a list of all modules (out of tree and in tree and sign all of those)
+    /usr/src/linux/scripts/sign-file sha256 db.key db.crt my_module.ko
+    /usr/src/linux-lts/scripts/sign-file sha256 db.key db.crt my_module.ko
+    /usr/src/linux-zen/scripts/sign-file sha256 db.key db.crt my_module.ko
     sync
     ;;
 verify)
