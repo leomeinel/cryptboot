@@ -28,7 +28,7 @@ modified boot loader (not signed by your keys) and whole attack is prevented.
 - efibootmgr
 - grub (grub-efi on Debian based distributions)
 
-On Arch Linux, use `sudo pacman -S efitools sbsigntools efibootmgr`.
+On Arch Linux, use `doas pacman -S efitools sbsigntools efibootmgr`.
 
 ## Installation
 
