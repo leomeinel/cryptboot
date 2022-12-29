@@ -61,8 +61,6 @@ create)
 
     GUID="$(uuidgen --random)"
     echo "$GUID" >GUID
-    MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
-    echo "$MSGUID" >MSGUID
 
     cert-to-efi-sig-list -g "$GUID" PK.crt PK.esl
     cert-to-efi-sig-list -g "$GUID" KEK.crt KEK.esl
@@ -70,17 +68,10 @@ create)
 
     echo -n >PK_null.esl
 
-    # OpROMs
-    curl -s https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt >MS_OpROM_db.crt
-    sbsiglist --owner "$MSGUID" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
-
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK.esl PK.auth
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK_null.esl PK_null.auth
     sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
     sign-efi-sig-list -g "$GUID" -k KEK.key -c KEK.crt db db.esl db.auth
-
-    # OpROMs
-    sign-efi-sig-list -g "$MSGUID" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
 
     chmod 000 "$EFI_KEYS_DIR"/*
     sync
@@ -93,7 +84,7 @@ enroll)
         exit
     }
 
-    if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]] || ! [[ -f MS_OpROM_db.esl ]]; then
+    if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]]; then
         echo "There are no UEFI Secure Boot keys in '$EFI_KEYS_DIR'!"
         echo "Please generate them first with '$0 create'"
         exit 1
@@ -116,13 +107,6 @@ enroll)
 
     echo "Enrolling UEFI Secure Boot db key..."
     efi-updatevar -e -f db.esl db
-
-    if ls -la /sys/firmware/efi/efivars/db*; then
-        chattr -i /sys/firmware/efi/efivars/db*
-    fi
-
-    echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
-    efi-updatevar -a -e -f MS_OpROM_db.esl db
 
     echo "Enrolling UEFI Secure Boot PK key..."
     efi-updatevar -f PK.auth PK
