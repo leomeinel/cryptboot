@@ -75,6 +75,7 @@ create)
 
     # OpROMs
     # TODO: Test this
+    # TODO: Regen keys automatically if secureboot is enabled and MSGUID is used in db
     if cryptboot-efikeys status; then
         TPM_JSON=$(tpm2_eventlog /sys/kernel/security/tpm0/binary_bios_measurements | awk -v k=1 '/  PCR/ {gsub(/  PCR/, sprintf("- EventNum: %d\n  PCR", k++))} 1' | yq)
         echo "$TPM_JSON" | jq ".events | .[] | select(.EventType==\"${LOG_TYPE}\") | .Digests | .[] | select(.AlgorithmId==\"${HASH_TYPE}\") | .Digest" | tr -d '"' >OpROM_hashes
