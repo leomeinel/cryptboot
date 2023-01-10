@@ -80,7 +80,6 @@ create)
         if cryptboot-efikeys status; then
             TPM_JSON=$(tpm2_eventlog /sys/kernel/security/tpm0/binary_bios_measurements | awk -v k=1 '/  PCR/ {gsub(/  PCR/, sprintf("- EventNum: %d\n  PCR", k++))} 1' | yq)
             echo "$TPM_JSON" | jq ".events | .[] | select(.EventType==\"${LOG_TYPE}\") | .Digests | .[] | select(.AlgorithmId==\"${HASH_TYPE}\") | .Digest" | tr -d '"' >OpROM_hashes
-
             readarray -t HASHES <OpROM_hashes
             for hash in "${HASHES[@]}"; do
                 if [[ "${#hash}" -eq "64" ]]; then
@@ -89,18 +88,15 @@ create)
                     cat /tmp/hash.esl >>OpROM_db.esl
                 fi
             done
-
             if [[ -f MSGUID ]]; then
                 rm MSGUID
             fi
             rm /tmp/hash /tmp/hash.esl
-
             sign-efi-sig-list -g "$GUID" -k KEK.key -c KEK.crt db OpROM_db.esl OpROM_db.auth
         else
             MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
             echo "$MSGUID" >MSGUID
             curl -s https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt >OpROM_db.crt
-
             sbsiglist --owner "$MSGUID" --type x509 --output OpROM_db.esl OpROM_db.crt
             sign-efi-sig-list -g "$MSGUID" -k KEK.key -c KEK.crt db OpROM_db.esl OpROM_db.auth
         fi
@@ -138,16 +134,16 @@ enroll)
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -e -f KEK.esl KEK
 
+    echo "Enrolling UEFI Secure Boot db key..."
+    efi-updatevar -e -f db.esl db
+
     # OpROMs
     # TODO: Test this
     # TODO: Regen keys automatically if secureboot is enabled and MSGUID is used in db
-    echo "Enrolling UEFI Secure Boot db key..."
-    efi-updatevar -e -f db.esl db
     if [[ -f /sys/kernel/security/tpm0/binary_bios_measurements ]]; then
         if ls -la /sys/firmware/efi/efivars/db*; then
             chattr -i /sys/firmware/efi/efivars/db*
         fi
-
         echo "Enrolling UEFI Secure Boot OpROM_db key..."
         efi-updatevar -a -e -f OpROM_db.esl db
     fi
