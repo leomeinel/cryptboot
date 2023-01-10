@@ -76,7 +76,8 @@ create)
     # OpROMs
     # TODO: Test this
     # TODO: Regen keys automatically if secureboot is enabled and MSGUID is used in db
-    # FIXME: Find a way not to generate MS cert if it is not needed (if possible)
+    # FIXME: Find a way not to generate/enroll MS cert if it is not needed (if possible)
+    # FIXME: Find a good way to skip generation alltogether if they are already generated
     if [[ -f /sys/kernel/security/tpm0/binary_bios_measurements ]] && cryptboot-efikeys status; then
         TPM_JSON=$(tpm2_eventlog /sys/kernel/security/tpm0/binary_bios_measurements | awk -v k=1 '/  PCR/ {gsub(/  PCR/, sprintf("- EventNum: %d\n  PCR", k++))} 1' | yq)
         echo "$TPM_JSON" | jq ".events | .[] | select(.EventType==\"${LOG_TYPE}\") | .Digests | .[] | select(.AlgorithmId==\"${HASH_TYPE}\") | .Digest" | tr -d '"' >OpROM_hashes
@@ -139,12 +140,35 @@ enroll)
     # OpROMs
     # TODO: Test this
     # TODO: Regen keys automatically if secureboot is enabled and MSGUID is used in db
+    # FIXME: Find a way not to generate/enroll MS cert if it is not needed (if possible)
+    # FIXME: Find a good way to skip generation alltogether if they are already generated
     if [[ -f OpROM_db.esl ]]; then
         if ls -la /sys/firmware/efi/efivars/db*; then
             chattr -i /sys/firmware/efi/efivars/db*
         fi
         echo "Enrolling UEFI Secure Boot OpROM_db key..."
         efi-updatevar -a -e -f OpROM_db.esl db
+    fi
+
+    # FIXME: This is ugly and only temporary
+    if ! [[ -f /sys/kernel/security/tpm0/binary_bios_measurements ]] && cryptboot-efikeys status; then
+        if ls -la /sys/firmware/efi/efivars/PK*; then
+            chattr -i /sys/firmware/efi/efivars/PK*
+        fi
+
+        if ls -la /sys/firmware/efi/efivars/KEK*; then
+            chattr -i /sys/firmware/efi/efivars/KEK*
+        fi
+
+        if ls -la /sys/firmware/efi/efivars/db*; then
+            chattr -i /sys/firmware/efi/efivars/db*
+        fi
+
+        echo "Enrolling UEFI Secure Boot KEK key..."
+        efi-updatevar -e -f KEK.esl KEK
+
+        echo "Enrolling UEFI Secure Boot db key..."
+        efi-updatevar -e -f db.esl db
     fi
 
     echo "Enrolling UEFI Secure Boot PK key..."
