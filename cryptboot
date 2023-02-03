@@ -3,7 +3,7 @@
 # File: cryptboot
 # Author: Leopold Meinel (leo@meinel.dev)
 # -----
-# Copyright (c) 2022 Leopold Meinel & contributors
+# Copyright (c) 2023 Leopold Meinel & contributors
 # SPDX ID: GPL-3.0-or-later
 # URL: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 # -----
@@ -100,7 +100,12 @@ umount)
     ;;
 update-grub)
     echo "Reinstalling GRUB to EFI System partition..."
-    /usr/bin/grub-install --target=x86_64-efi --boot-directory="$BOOT_DIR" --efi-directory="$EFI_DIR" --bootloader-id="$EFI_ID_GRUB" --modules="tpm" --disable-shim-lock
+    DISK1="$(/usr/bin/lsblk -npo PKNAME $(/usr/bin/findmnt -no SOURCE --target "$BOOT_DIR") | /usr/bin/tr -d "[:space:]")"
+    if udevadm info -q property --property=ID_BUS --value "$DISK1" | grep -q "usb"; then
+        /usr/bin/grub-install --target=x86_64-efi --boot-directory="$BOOT_DIR" --efi-directory="$EFI_DIR" --bootloader-id="$EFI_ID_GRUB" --modules="tpm" --disable-shim-lock --removable
+    else
+        /usr/bin/grub-install --target=x86_64-efi --boot-directory="$BOOT_DIR" --efi-directory="$EFI_DIR" --bootloader-id="$EFI_ID_GRUB" --modules="tpm" --disable-shim-lock
+    fi
 
     echo "Regenerating GRUB config file..."
     grub-mkconfig -o "$BOOT_DIR/grub/grub.cfg"
