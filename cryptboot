@@ -100,7 +100,7 @@ umount)
     ;;
 update-grub)
     echo "Reinstalling GRUB to EFI System partition..."
-    DISK1="$(/usr/bin/lsblk -npo PKNAME $(/usr/bin/findmnt -no SOURCE --target "$BOOT_DIR") | /usr/bin/tr -d "[:space:]")"
+    DISK1="$(lsblk -npo PKNAME $(findmnt -no SOURCE --target "$BOOT_DIR") | tr -d "[:space:]")"
     if udevadm info -q property --property=ID_BUS --value "$DISK1" | grep -q "usb"; then
         /usr/bin/grub-install --target=x86_64-efi --boot-directory="$BOOT_DIR" --efi-directory="$EFI_DIR" --bootloader-id="$EFI_ID_GRUB" --modules="tpm" --disable-shim-lock --removable
     else
