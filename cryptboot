@@ -22,6 +22,7 @@ EFI_DIR="/efi"
 BOOT_LOADER="GRUB"
 EFI_ID_GRUB="GRUB"
 EFI_PATH_GRUB="EFI/GRUB/grubx64.efi"
+ADDITIONAL_EFI_PATH_GRUB=("EFI/BOOT/BOOTX64.EFI")
 PKG_UPGRADE_CMD="pacman -Syu"
 
 # Load config file
@@ -112,6 +113,12 @@ update-grub)
 
     echo "Signing GRUB with UEFI Secure Boot keys..."
     "$EFIKEYS_BIN" sign "$EFI_DIR/$EFI_PATH_GRUB"
+    for path in ${ADDITIONAL_EFI_PATH_GRUB[@]}; do
+        if [[ -f "$EFI_DIR/$path" ]]; then
+            "$EFIKEYS_BIN" sign "$EFI_DIR/$path"
+        fi
+    done
+
     sync
     ;;
 upgrade)
