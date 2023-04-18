@@ -20,7 +20,6 @@ boot loader (not signed by your keys) and whole attack is prevented.
 
 - Linux (x86_64)
 - UEFI firmware with enabled Secure Boot
-- separate `/boot` partition encrypted with LUKS
 - cryptsetup
 - openssl
 - efitools

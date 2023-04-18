@@ -32,13 +32,7 @@ fi
 # Get path to cryptboot-efikeys executable
 EFIKEYS_BIN="$(which cryptboot-efikeys 2>/dev/null)"
 
-# Check if /boot mountpoint exists
-if ! findmnt -sn "$BOOT_DIR" &>/dev/null; then
-    echo "Couldn't find boot partition mountpoint '$BOOT_DIR', check your /etc/fstab"
-    exit 1
-fi
-
-# Check if /boot/efi mountpoint exists
+# Check if $EFI_DIR mountpoint exists
 if ! findmnt -sn "$EFI_DIR" &>/dev/null; then
     echo "Couldn't find EFI System partition mountpoint '$EFI_DIR', check your /etc/fstab"
     exit 1
