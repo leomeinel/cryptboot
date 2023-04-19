@@ -96,16 +96,17 @@ efi-readvar -v dbx -o old_dbx.esl
     EFI_DIR="/efi"
 
     # Path to boot loader EFI file (relative to EFI_DIR)
-    EFI_PATH="EFI/BOOT/BOOTX64.EFI"
+    ## format: ("a" "b")
+    EFI_PATHS=("EFI/systemd/systemd-bootx64.efi" "EFI/BOOT/BOOTX64.EFI")
 
-    # Path to additional boot loaders
-    ## format: ("a" "b" "...")
-    ADDITIONAL_EFI_PATH=("EFI/systemd/systemd-bootx64.efi")
+    # Path to kernel images
+    ## format: ("a" "b")
+    KERNEL_PATHS=("EFI/Linux")
 
     # UEFI Secure Boot keys directory
     EFI_KEYS_DIR="/etc/secureboot/keys"
 
-## Limitations (outdated!)
+## Limitations
 
 - If there is backdoor in your UEFI firmware, you are out of luck. It is _GAME OVER_.
 

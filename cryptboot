@@ -10,15 +10,15 @@
 ###
 
 # Check if user is root
-if [[ $UID -ne 0 ]]; then
+if [[ "$UID" -ne 0 ]]; then
     echo "Permission denied (you must be root)"
     exit 1
 fi
 
 # Default config
 EFI_DIR="/efi"
-EFI_PATH="EFI/BOOT/BOOTX64.EFI"
-ADDITIONAL_EFI_PATH=("EFI/systemd/systemd-bootx64.efi")
+EFI_PATHS=("EFI/systemd/systemd-bootx64.efi" "EFI/BOOT/BOOTX64.EFI")
+KERNEL_PATHS=("EFI/Linux")
 
 # Load config file
 if [[ -f "/etc/cryptboot.conf" ]]; then
@@ -41,11 +41,16 @@ fi
 case "$1" in
 systemd-boot-sign)
     echo "Signing kernel with UEFI secure boot keys..."
-    "$EFIKEYS_BIN" sign "$EFI_DIR/$EFI_PATH"
-    for path in ${ADDITIONAL_EFI_PATH[@]}; do
+    for path in "${EFI_PATHS[@]}"; do
         if [[ -f "$EFI_DIR/$path" ]]; then
             "$EFIKEYS_BIN" sign "$EFI_DIR/$path"
         fi
+    done
+    for path in "${KERNEL_PATHS[@]}"; do
+        shopt -s nocaseglob
+        for kernel in "$EFI_DIR/$path"/*.efi; do
+            "$EFIKEYS_BIN" sign "$kernel"
+        done
     done
 
     sync
