@@ -16,10 +16,9 @@ if [[ $UID -ne 0 ]]; then
 fi
 
 # Default config
-BOOT_DIR="/boot"
 EFI_DIR="/efi"
-EFI_PATH="EFI/GRUB/grubx64.efi"
-ADDITIONAL_EFI_PATH=("EFI/BOOT/BOOTX64.EFI")
+EFI_PATH="EFI/BOOT/BOOTX64.EFI"
+ADDITIONAL_EFI_PATH=("EFI/systemd/systemd-bootx64.efi")
 
 # Load config file
 if [[ -f "/etc/cryptboot.conf" ]]; then

@@ -92,18 +92,15 @@ efi-readvar -v dbx -o old_dbx.esl
 
 **Default configuration (`/etc/cryptboot.conf`)**
 
-    # Boot directory (has to be specified in /etc/fstab)
-    BOOT_DIR="/boot"
-
     # EFI System partition mount point (has to be specified in /etc/fstab)
     EFI_DIR="/efi"
 
     # Path to boot loader EFI file (relative to EFI_DIR)
-    EFI_PATH="EFI/GRUB/grubx64.efi"
+    EFI_PATH="EFI/BOOT/BOOTX64.EFI"
 
     # Path to additional boot loaders
     ## format: ("a" "b" "...")
-    ADDITIONAL_EFI_PATH=("EFI/BOOT/BOOTX64.EFI")
+    ADDITIONAL_EFI_PATH=("EFI/systemd/systemd-bootx64.efi")
 
     # UEFI Secure Boot keys directory
     EFI_KEYS_DIR="/etc/secureboot/keys"
@@ -146,8 +143,7 @@ efi-readvar -v dbx -o old_dbx.esl
   have any effect (evil firmware / boot loader will already have your password at that point).
 
   This can be fixed by implementing TPM support and `tpmtotp` or `anti-evil-maid` like
-  functionality directly in GRUB boot loader (but current [TrustedGRUB2](https://github.com/Rohde-Schwarz-Cybersecurity/TrustedGRUB2)
-  doesn't even support UEFI yet).
+  functionality directly in the boot loader.
 
   The question is if this is really needed? If you don't trust UEFI firmware, why should you
   trust TPM? But nevertheless it would be nice to have double-check against evil maids.
