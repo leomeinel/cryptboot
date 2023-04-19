@@ -10,7 +10,7 @@
 ###
 
 # Check if user is root
-if [[ $UID -ne 0 ]]; then
+if [[ "$UID" -ne 0 ]]; then
     echo "Permission denied (you must be root)"
     exit 1
 fi
