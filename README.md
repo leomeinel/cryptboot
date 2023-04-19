@@ -5,14 +5,14 @@ Encrypted boot partition manager with UEFI Secure Boot support
 ## Description
 
 With encrypted boot partition, nobody can see or modify your kernel image or initramfs.
-GRUB boot loader supports booting from encrypted boot partition, but you would be
+systemd-boot supports booting from encrypted boot partition, but you would be
 still vulnerable to [Evil Maid](https://www.schneier.com/blog/archives/2009/10/evil_maid_attac.html)
 attacks.
 
 One possible solution is to use UEFI Secure Boot. Get rid of preloaded Secure Boot keys
 (you really don't want to trust Microsoft and OEM), enroll your own Secure Boot keys
-and sign GRUB boot loader with your keys. Evil maid would be unable to boot
-modified boot loader (not signed by your keys) and whole attack is prevented.
+and sign boot loader with them. Evil maid would be unable to boot modified
+boot loader (not signed by your keys) and whole attack is prevented.
 
 `cryptboot` simply makes this easy and manageable.
 
@@ -20,13 +20,12 @@ modified boot loader (not signed by your keys) and whole attack is prevented.
 
 - Linux (x86_64)
 - UEFI firmware with enabled Secure Boot
-- separate `/boot` partition encrypted with LUKS
 - cryptsetup
 - openssl
 - efitools
 - sbsigntools
 - efibootmgr
-- grub (grub-efi on Debian based distributions)
+- systemd-boot
 
 On Arch Linux, use `doas pacman -S efitools sbsigntools efibootmgr`.
 
@@ -41,10 +40,7 @@ efi-readvar -v db -o old_db.esl
 efi-readvar -v dbx -o old_dbx.esl
 ```
 
-1.  Install your favorite Linux distribution with separate `/boot` partition encrypted with LUKS.
-    Refer to your distributions documentation, there is e.g. guide for Arch Linux:
-
-    [Encrypted boot partition (GRUB)](https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Encrypted_boot_partition_.28GRUB.29)
+1.  Install your favorite Linux distribution according to its documentation.
 
 2.  Boot into UEFI firmware setup utility (frequently but incorrectly referred to as "BIOS"),
     enable _Secure Boot_ and clear all preloaded Secure Boot keys (Microsoft and OEM).
@@ -54,52 +50,30 @@ efi-readvar -v dbx -o old_dbx.esl
     You must also set your UEFI firmware _supervisor password_, so nobody
     can simply boot into UEFI setup utility and turn off Secure Boot.
 
-3.  Boot into your Linux distribution and mount `/boot` partition and EFI System partition:
-
-        cryptboot mount
-
-4.  Generate your new UEFI Secure Boot keys:
+3.  Generate your new UEFI Secure Boot keys:
 
         cryptboot-efikeys create
 
-5.  Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
+4.  Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
 
         cryptboot-efikeys enroll
 
-6.  Update GRUB boot loader (it will be automatically signed with your new UEFI Secure Boot keys):
+5.  Sign boot loader with your new UEFI Secure Boot keys:
 
-        cryptboot update-grub
+        cryptboot systemd-boot-sign
 
-7.  Unmount `/boot` partition and EFI System partition:
-
-        cryptboot umount
-
-8.  Reboot your system, you should be completely secured against evil maid attacks from now on!
-
-## Usage
-
-After installation, usage of `cryptboot` is as simple as running:
-
-    cryptboot upgrade
-
-This will mount `/boot` partition and EFI System partition, properly upgrade your system
-with distributions package manager, update and sign GRUB boot loader and finally
-unmount `/boot` partition and EFI System partition.
-We hook the call to `grub-install` by putting a simple `grub-install` script into `/usr/local/bin` to call `cryptboot update-grub`. This will prevent failing to boot if someone (or a script) calls `grub-install` without signing the bootloader afterwards.
+6.  Reboot your system, you should be completely secured against evil maid attacks from now on!
 
 ## Help
 
 **cryptboot**
 
-    Usage: cryptboot {mount|umount|update-grub|upgrade}
+    Usage: cryptboot systemd-boot-sign
 
-    Encrypted boot partition manager with UEFI Secure Boot support
+    Encrypted boot manager with UEFI Secure Boot support
 
     Commands:
-        mount        Unlock and mount your encrypted boot partition and EFI System partition
-        umount       Unmount and lock your encrypted boot partition and EFI System partition
-        update-grub  Update GRUB2 boot loader and sign it with your UEFI Secure Boot keys
-        upgrade      Mount, upgrade system with package manager, update boot loader and unmount
+        systemd-boot-sign  systemd-boot-sign  Sign kernel with UEFI secure boot keys
 
 **cryptboot-efikeys**
 
@@ -118,32 +92,20 @@ We hook the call to `grub-install` by putting a simple `grub-install` script int
 
 **Default configuration (`/etc/cryptboot.conf`)**
 
-    # Encrypted boot device name (/dev/mapper/$BOOT_CRYPT_NAME)
-    # (have to be specified in /etc/crypttab)
-    BOOT_CRYPT_NAME="cryptboot"
+    # EFI System partition mount point (has to be specified in /etc/fstab)
+    EFI_DIR="/efi"
 
-    # Boot partition mount point (have to be specified in /etc/fstab)
-    BOOT_DIR="/boot"
+    # Path to boot loader EFI file (relative to EFI_DIR)
+    EFI_PATH="EFI/BOOT/BOOTX64.EFI"
 
-    # EFI System partition mount point (have to be specified in /etc/fstab)
-    EFI_DIR="/boot/efi"
-
-    # Default boot loader (only GRUB is supported for now)
-    BOOT_LOADER="GRUB"
-
-    # Boot entry in UEFI Boot Manager (if using GRUB boot loader)
-    EFI_ID_GRUB="GRUB"
-
-    # Path to GRUB boot loader EFI file (relative to EFI System partition)
-    EFI_PATH_GRUB="EFI/grub/grubx64.efi"
+    # Path to additional boot loaders
+    ## format: ("a" "b" "...")
+    ADDITIONAL_EFI_PATH=("EFI/systemd/systemd-bootx64.efi")
 
     # UEFI Secure Boot keys directory
-    EFI_KEYS_DIR="/boot/efikeys"
+    EFI_KEYS_DIR="/etc/secureboot/keys"
 
-    # Command run to upgrade system packages
-    PKG_UPGRADE_CMD="pacman -Syu"
-
-## Limitations
+## Limitations (outdated!)
 
 - If there is backdoor in your UEFI firmware, you are out of luck. It is _GAME OVER_.
 
@@ -181,24 +143,12 @@ We hook the call to `grub-install` by putting a simple `grub-install` script int
   have any effect (evil firmware / boot loader will already have your password at that point).
 
   This can be fixed by implementing TPM support and `tpmtotp` or `anti-evil-maid` like
-  functionality directly in GRUB boot loader (but current [TrustedGRUB2](https://github.com/Rohde-Schwarz-Cybersecurity/TrustedGRUB2)
-  doesn't even support UEFI yet).
+  functionality directly in the boot loader.
 
   The question is if this is really needed? If you don't trust UEFI firmware, why should you
   trust TPM? But nevertheless it would be nice to have double-check against evil maids.
 
 ## Further reading
 
-- Encrypted boot partition (GRUB) - https://wiki.archlinux.org/title/Dm-crypt/Encrypting_an_entire_system#Encrypted_boot_partition_(GRUB)
 - UEFI (Secure_Boot) - https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot
 - How to boot Linux using UEFI with Secure Boot? - https://ubs_csse.gitlab.io/secu_os/tutorials/linux_secure_boot.html
-
-## Fixing: error: verification requested but nobody cares: (cryptouuid/$PARTITION_UUID)/grub/x86_64-efi/normal.mod
-
-This occurs during boot after upgrading to grub2 2.06. The fix is to add `--modules="tpm" and --disable-shim-lock)` as parameters to `grub-install`. Unfortunately it's not clear why it's needed (as we don't use TPM or shim). Further reading about this topic:
-
-- https://www.mail-archive.com/bug-grub@gnu.org/msg17008.html
-- https://bugs.archlinux.org/task/71382
-- https://bbs.archlinux.org/viewtopic.php?id=267944
-- https://github.com/archlinux/svntogit-packages/commit/4144617d6ee4aa52d27f4b84c977a413f2e860fe#diff-3e341d2d9c67be01819b25b25d5e53ea3cdf3a38d28846cda85a195eb9b7203a
-- https://wejn.org/2021/09/fixing-grub-verification-requested-nobody-cares/
