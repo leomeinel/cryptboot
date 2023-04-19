@@ -47,7 +47,8 @@ systemd-boot-sign)
         fi
     done
     for path in "${KERNEL_PATHS[@]}"; do
-        for kernel in "$EFI_DIR/$path"/*; do
+        shopt -s nocaseglob
+        for kernel in "$EFI_DIR/$path"/*.efi; do
             "$EFIKEYS_BIN" sign "$kernel"
         done
     done
