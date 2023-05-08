@@ -28,6 +28,7 @@ fi
 
 # Create UEFI Secure Boot keys directory (if it doesn't already exists)
 mkdir -p "$EFI_KEYS_DIR"
+chmod 700 "$EFI_KEYS_DIR"
 
 # Main program
 case "$1" in
