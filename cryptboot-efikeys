@@ -33,7 +33,8 @@ chmod 700 "$EFI_KEYS_DIR"
 # Main program
 case "$1" in
 create)
-    cd "$EFI_KEYS_DIR" || {
+    cd "$EFI_KEYS_DIR" ||
+    {
         echo "You have to specify EFI_KEYS_DIR!"
         exit
     }
@@ -89,7 +90,8 @@ create)
     echo "New UEFI Secure Boot keys created in '$EFI_KEYS_DIR'"
     ;;
 enroll)
-    cd "$EFI_KEYS_DIR" || {
+    cd "$EFI_KEYS_DIR" ||
+    {
         echo "You have to specify EFI_KEYS_DIR!"
         exit
     }
@@ -132,7 +134,8 @@ enroll)
     echo "You should now sign your boot loader and reboot!"
     ;;
 sign)
-    cd "$EFI_KEYS_DIR" || {
+    cd "$EFI_KEYS_DIR" ||
+    {
         echo "You have to specify EFI_KEYS_DIR!"
         exit
     }
@@ -148,12 +151,16 @@ sign)
         echo "Please generate them first with '$0 create' and then enroll them with '$0 enroll'"
         exit 1
     fi
-    echo "Signing file '$filename' with UEFI Secure Boot keys..."
-    sbsign --key db.key --cert db.crt --output "$filename" "$filename"
-    sync
+    sbverify --cert db.crt "$filename" ||
+    {
+        echo "Signing file '$filename' with UEFI Secure Boot keys..."
+        sbsign --key db.key --cert db.crt --output "$filename" "$filename"
+        sync
+    }
     ;;
 verify)
-    cd "$EFI_KEYS_DIR" || {
+    cd "$EFI_KEYS_DIR" ||
+    {
         echo "You have to specify EFI_KEYS_DIR!"
         exit
     }
