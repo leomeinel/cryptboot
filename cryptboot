@@ -58,7 +58,7 @@ systemd-boot-sign)
 *)
     echo "Usage: $(basename "$0") {systemd-boot-sign|upgrade}"
     echo
-    echo "Encrypted boot partition manager with UEFI Secure Boot support"
+    echo "Manage UEFI Secure Boot keys"
     echo
     echo "Commands:"
     echo "    systemd-boot-sign  Sign kernel with UEFI secure boot keys"
