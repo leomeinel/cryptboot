@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ###
 # File: systemd-boot-sign
 # Author: Leopold Meinel (leo@meinel.dev)
