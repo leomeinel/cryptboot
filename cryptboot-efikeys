@@ -3,7 +3,7 @@
 # File: cryptboot-efikeys
 # Author: Leopold Meinel (leo@meinel.dev)
 # -----
-# Copyright (c) 2023 Leopold Meinel & contributors
+# Copyright (c) 2025 Leopold Meinel & contributors
 # SPDX ID: GPL-3.0-or-later
 # URL: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 # -----
@@ -20,7 +20,7 @@ EFI_KEYS_DIR="/etc/secureboot/keys"
 
 # Load config file
 if [[ -f "/etc/cryptboot.conf" ]]; then
-    source "/etc/cryptboot.conf"
+    . /etc/cryptboot.conf
 else
     echo "/etc/cryptboot.conf doesn't exist!"
     exit
@@ -34,10 +34,10 @@ chmod 700 "$EFI_KEYS_DIR"
 case "$1" in
 create)
     cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+        {
+            echo "You have to specify EFI_KEYS_DIR!"
+            exit
+        }
 
     if ls -la "$EFI_KEYS_DIR"/*; then
         echo "UEFI Secure Boot keys in '$EFI_KEYS_DIR' already exists!"
@@ -91,10 +91,10 @@ create)
     ;;
 enroll)
     cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+        {
+            echo "You have to specify EFI_KEYS_DIR!"
+            exit
+        }
 
     if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]] || ! [[ -f MS_OpROM_db.esl ]]; then
         echo "There are no UEFI Secure Boot keys in '$EFI_KEYS_DIR'!"
@@ -135,10 +135,10 @@ enroll)
     ;;
 sign)
     cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+        {
+            echo "You have to specify EFI_KEYS_DIR!"
+            exit
+        }
 
     filename="$2"
     if [[ -z "$filename" ]]; then
@@ -152,18 +152,18 @@ sign)
         exit 1
     fi
     sbverify --cert db.crt "$filename" ||
-    {
-        echo "Signing file '$filename' with UEFI Secure Boot keys..."
-        sbsign --key db.key --cert db.crt --output "$filename" "$filename"
-        sync
-    }
+        {
+            echo "Signing file '$filename' with UEFI Secure Boot keys..."
+            sbsign --key db.key --cert db.crt --output "$filename" "$filename"
+            sync
+        }
     ;;
 verify)
     cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+        {
+            echo "You have to specify EFI_KEYS_DIR!"
+            exit
+        }
 
     filename="$2"
     if [[ -z "$filename" ]]; then
