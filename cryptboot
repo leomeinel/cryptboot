@@ -22,6 +22,7 @@ KERNEL_PATHS=("EFI/Linux")
 
 # Load config file
 if [[ -f "/etc/cryptboot.conf" ]]; then
+    # shellcheck source=/dev/null
     . /etc/cryptboot.conf
 else
     echo "/etc/cryptboot.conf doesn't exist!"

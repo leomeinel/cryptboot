@@ -20,6 +20,7 @@ EFI_KEYS_DIR="/etc/secureboot/keys"
 
 # Load config file
 if [[ -f "/etc/cryptboot.conf" ]]; then
+    # shellcheck source=/dev/null
     . /etc/cryptboot.conf
 else
     echo "/etc/cryptboot.conf doesn't exist!"
@@ -50,7 +51,7 @@ create)
     fi
 
     echo "Creating new UEFI Secure Boot keys..."
-    read -p "Enter a Common Name: " NAME
+    read -r -p "Enter a Common Name: " NAME
     echo "${NAME}" >NAME
 
     openssl req -newkey rsa:4096 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} PK/" -out PK.crt
