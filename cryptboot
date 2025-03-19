@@ -10,7 +10,7 @@
 ###
 
 # Check if user is root
-if [[ "$UID" -ne 0 ]]; then
+if [[ "${UID}" -ne 0 ]]; then
     echo "Permission denied (you must be root)"
     exit 1
 fi
@@ -31,32 +31,32 @@ fi
 # Get path to cryptboot-efikeys executable
 EFIKEYS_BIN="$(which cryptboot-efikeys 2>/dev/null)"
 
-# Check if $EFI_DIR mountpoint exists
-if ! findmnt -sn "$EFI_DIR" &>/dev/null; then
-    echo "Couldn't find EFI System partition mountpoint '$EFI_DIR', check your /etc/fstab"
+# Check if EFI_DIR mountpoint exists
+if ! findmnt -sn "${EFI_DIR}" &>/dev/null; then
+    echo "Couldn't find EFI System partition mountpoint '${EFI_DIR}', check your /etc/fstab"
     exit 1
 fi
 
 # Main program
-case "$1" in
+case "${1}" in
 systemd-boot-sign)
     echo "Signing kernel with UEFI secure boot keys..."
     for path in "${EFI_PATHS[@]}"; do
-        if [[ -f "$EFI_DIR/$path" ]]; then
-            "$EFIKEYS_BIN" sign "$EFI_DIR/$path"
+        if [[ -f "${EFI_DIR}/${path}" ]]; then
+            "${EFIKEYS_BIN}" sign "${EFI_DIR}/${path}"
         fi
     done
     for path in "${KERNEL_PATHS[@]}"; do
         shopt -s nocaseglob
-        for kernel in "$EFI_DIR/$path"/*.efi; do
-            "$EFIKEYS_BIN" sign "$kernel"
+        for kernel in "${EFI_DIR}/${path}"/*.efi; do
+            "${EFIKEYS_BIN}" sign "${kernel}"
         done
     done
 
     sync
     ;;
 *)
-    echo "Usage: $(basename "$0") {systemd-boot-sign|upgrade}"
+    echo "Usage: $(basename "${0}") {systemd-boot-sign|upgrade}"
     echo
     echo "Manage UEFI Secure Boot keys"
     echo
