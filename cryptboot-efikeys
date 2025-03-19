@@ -48,7 +48,7 @@ create)
             rm -rf "${EFI_KEYS_DIR:?}"/*
             ;;
         *)
-            echo "WARNING: User aborted generating secureboot keys"
+            echo "ERROR: User aborted generating secureboot keys"
             exit 1
             ;;
         esac
