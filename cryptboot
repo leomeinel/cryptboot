@@ -29,9 +29,6 @@ else
     exit
 fi
 
-# Get path to cryptboot-efikeys executable
-EFIKEYS_BIN="$(which cryptboot-efikeys 2>/dev/null)"
-
 # Check if EFI_DIR mountpoint exists
 if ! findmnt -sn "${EFI_DIR}" &>/dev/null; then
     echo "Couldn't find EFI System partition mountpoint '${EFI_DIR}', check your /etc/fstab"
@@ -44,13 +41,13 @@ systemd-boot-sign)
     echo "Signing kernel with UEFI secure boot keys..."
     for path in "${EFI_PATHS[@]}"; do
         if [[ -f "${EFI_DIR}/${path}" ]]; then
-            "${EFIKEYS_BIN}" sign "${EFI_DIR}/${path}"
+            cryptboot-efikeys sign "${EFI_DIR}/${path}"
         fi
     done
     for path in "${KERNEL_PATHS[@]}"; do
         shopt -s nocaseglob
         for kernel in "${EFI_DIR}/${path}"/*.efi; do
-            "${EFIKEYS_BIN}" sign "${kernel}"
+            cryptboot-efikeys sign "${kernel}"
         done
     done
 
