@@ -20,20 +20,25 @@ boot loader (not signed by your keys) and whole attack is prevented.
 
 - Linux (x86_64)
 - UEFI firmware with enabled Secure Boot
-- cryptsetup
+- systemd-boot
 - openssl
 - efitools
 - sbsigntools
 - efibootmgr
-- systemd-boot
 
-On Arch Linux, use `doas pacman -S efitools sbsigntools efibootmgr`.
+On Arch Linux, use:
+
+```sh
+# Execute as root
+pacman -S openssl efitools sbsigntools efibootmgr
+```
 
 ## Installation
 
 0. Before you enroll your own keys, you can backup the ones which are currently deployed
 
 ```sh
+# Execute as root
 efi-readvar -v PK -o old_PK.esl
 efi-readvar -v KEK -o old_KEK.esl
 efi-readvar -v db -o old_db.esl
@@ -52,59 +57,70 @@ efi-readvar -v dbx -o old_dbx.esl
 
 3.  Generate your new UEFI Secure Boot keys:
 
-        cryptboot-efikeys create
+```sh
+# Execute as root
+cryptboot-efikeys create
+```
 
 4.  Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
 
-        cryptboot-efikeys enroll
+```sh
+# Execute as root
+cryptboot-efikeys enroll
+```
 
-5.  Sign boot loader with your new UEFI Secure Boot keys:
+1.  Sign boot loader with your new UEFI Secure Boot keys:
 
-        cryptboot systemd-boot-sign
+```sh
+# Execute as root
+cryptboot systemd-boot-sign
+```
 
-6.  Reboot your system, you should be completely secured against evil maid attacks from now on!
+1.  Reboot your system, you should be completely secured against evil maid attacks from now on!
 
 ## Help
 
-**cryptboot**
+### cryptboot
 
-    Usage: cryptboot systemd-boot-sign
+```
+Usage: cryptboot {systemd-boot-sign}
 
-    Manage UEFI Secure Boot keys
+Manage UEFI Secure Boot keys
 
-    Commands:
-        systemd-boot-sign  Sign kernel with UEFI secure boot keys
+Commands:
+    systemd-boot-sign  Sign kernel with UEFI secure boot keys
+```
 
-**cryptboot-efikeys**
+### cryptboot-efikeys
 
-    Usage: cryptboot-efikeys {create,enroll,sign,verify,list} [file-to-sign-or-verify]
+```
+Usage: cryptboot-efikeys {create,enroll,sign,verify,list} [file-to-sign-or-verify]
 
-    Manage UEFI Secure Boot keys
+Manage UEFI Secure Boot keys
 
-    Commands:
-        create  Generate new UEFI Secure Boot keys
-        enroll  Enroll new UEFI Secure Boot keys to your UEFI firmware
-                (you have to clear old keys in your UEFI firmware setup utility first)
-        sign    Sign EFI boot image file with your UEFI Secure Boot keys
-        verify  Verify signature of EFI boot image file with your UEFI Secure Boot keys
-        list    List all UEFI Secure Boot keys enrolled in your UEFI firmware
-        status  Check if UEFI Secure Boot is active or inactive
+Commands:
+    create  Generate new UEFI Secure Boot keys
+    enroll  Enroll new UEFI Secure Boot keys to your UEFI firmware
+            (you have to clear old keys in your UEFI firmware setup utility first)
+    sign    Sign EFI boot image file with your UEFI Secure Boot keys
+    verify  Verify signature of EFI boot image file with your UEFI Secure Boot keys
+    list    List all UEFI Secure Boot keys enrolled in your UEFI firmware
+    status  Check if UEFI Secure Boot is active or inactive
+```
 
-**Default configuration (`/etc/cryptboot.conf`)**
+### Default configuration (`/etc/cryptboot.conf`)
 
-    # EFI System partition mount point (has to be specified in /etc/fstab)
-    EFI_DIR="/efi"
+```conf
+# EFI System partition mount point (has to be specified in /etc/fstab)
+EFI_DIR="/efi"
 
-    # Path to boot loader EFI file (relative to EFI_DIR)
-    ## format: ("a" "b")
-    EFI_PATHS=("EFI/systemd/systemd-bootx64.efi" "EFI/BOOT/BOOTX64.EFI")
+# List of paths with images to sign
+## format: ("a" "b")
+TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
-    # Path to kernel images
-    ## format: ("a" "b")
-    KERNEL_PATHS=("EFI/Linux")
-
-    # UEFI Secure Boot keys directory
-    EFI_KEYS_DIR="/etc/secureboot/keys"
+# UEFI Secure Boot keys directory
+EFI_KEYS_DIR="/etc/secureboot/keys"
+```
 
 ## Limitations
 
