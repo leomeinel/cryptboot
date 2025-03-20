@@ -54,10 +54,10 @@ systemd-boot-sign)
     sync
     ;;
 *)
-    echo "Usage: $(basename "${0}") {systemd-boot-sign|upgrade}"
-    echo
+    echo "Usage: $(basename "${0}") systemd-boot-sign"
+    echo ""
     echo "Manage UEFI Secure Boot keys"
-    echo
+    echo ""
     echo "Commands:"
     echo "    systemd-boot-sign  Sign kernel with UEFI secure boot keys"
     ;;

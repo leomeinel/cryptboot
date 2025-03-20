@@ -70,10 +70,10 @@ efi-readvar -v dbx -o old_dbx.esl
 
     Usage: cryptboot systemd-boot-sign
 
-    Encrypted boot manager with UEFI Secure Boot support
+    Manage UEFI Secure Boot keys
 
     Commands:
-        systemd-boot-sign  systemd-boot-sign  Sign kernel with UEFI secure boot keys
+        systemd-boot-sign  Sign kernel with UEFI secure boot keys
 
 **cryptboot-efikeys**
 

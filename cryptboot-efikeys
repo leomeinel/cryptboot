@@ -183,7 +183,7 @@ verify)
     fi
     echo "List of all signatures in '${filename}':"
     sbverify --list "${filename}"
-    echo
+    echo ""
 
     echo "Verifying signature with UEFI Secure Boot keys..."
     sbverify --cert db.crt "${filename}"
@@ -205,9 +205,9 @@ status)
     ;;
 *)
     echo "Usage: $(basename "${0}") {create,enroll,sign,verify,list} [file-to-sign-or-verify]"
-    echo
+    echo ""
     echo "Manage UEFI Secure Boot keys"
-    echo
+    echo ""
     echo "Commands:"
     echo "    create  Generate new UEFI Secure Boot keys"
     echo "    enroll  Enroll new UEFI Secure Boot keys to your UEFI firmware"
