@@ -11,50 +11,49 @@
 
 # Check if user is root
 if [[ "${UID}" -ne 0 ]]; then
-    echo "Permission denied (you must be root)"
+    echo "ERROR: You can only run this script as root"
     exit 1
 fi
 
-# Default config
+# Default directory for cryptboot.conf
+CONFIGURATION_FILE=/etc/cryptboot.conf
+
+# Default config if not included in cryptboot.conf
 EFI_DIR="/efi"
-EFI_PATHS=("EFI/systemd/systemd-bootx64.efi" "EFI/BOOT/BOOTX64.EFI")
-KERNEL_PATHS=("EFI/Linux")
+TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
 # Load config file
-if [[ -f "/etc/cryptboot.conf" ]]; then
+if [[ -f "${CONFIGURATION_FILE}" ]]; then
     # shellcheck source=/dev/null
-    . /etc/cryptboot.conf
+    . ${CONFIGURATION_FILE}
 else
-    echo "/etc/cryptboot.conf doesn't exist!"
-    exit
+    echo "ERROR: ${CONFIGURATION_FILE} doesn't exist!"
+    exit 1
 fi
 
 # Check if EFI_DIR mountpoint exists
 if ! findmnt -sn "${EFI_DIR}" &>/dev/null; then
-    echo "Couldn't find EFI System partition mountpoint '${EFI_DIR}', check your /etc/fstab"
+    echo "ERROR: Couldn't find EFI System partition mountpoint '${EFI_DIR}', check your /etc/fstab"
     exit 1
 fi
 
-# Main program
 case "${1}" in
 systemd-boot-sign)
+    # Sign files in TO_SIGN with UEFI secure boot keys
     echo "Signing kernel with UEFI secure boot keys..."
-    for path in "${EFI_PATHS[@]}"; do
-        if [[ -f "${EFI_DIR}/${path}" ]]; then
-            cryptboot-efikeys sign "${EFI_DIR}/${path}"
-        fi
-    done
-    for path in "${KERNEL_PATHS[@]}"; do
+    for path in "${TO_SIGN[@]}"; do
         shopt -s nocaseglob
-        for kernel in "${EFI_DIR}/${path}"/*.efi; do
-            cryptboot-efikeys sign "${kernel}"
+        for file in "${EFI_DIR}"/"${path}"/*.efi; do
+            cryptboot-efikeys sign "${file}"
         done
     done
 
+    # Synchronize cached writes to persistent storage
     sync
     ;;
 *)
-    echo "Usage: $(basename "${0}") systemd-boot-sign"
+    # Print help
+    echo "Usage: $(basename "${0}") {systemd-boot-sign}"
     echo ""
     echo "Manage UEFI Secure Boot keys"
     echo ""
