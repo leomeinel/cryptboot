@@ -18,32 +18,26 @@ boot loader (not signed by your keys) and whole attack is prevented.
 
 ## Requirements
 
-- Linux (x86_64)
-- UEFI firmware with enabled Secure Boot
-- systemd-boot
-- openssl
-- efitools
-- sbsigntools
-- efibootmgr
+There might be other packages that are needed for scripts and configs to function.
 
-On Arch Linux, use:
+### Arch repo
 
-```sh
-# Execute as root
-pacman -S openssl efitools sbsigntools efibootmgr
-```
+- [efibootmgr](https://archlinux.org/packages/core/x86_64/efibootmgr/)
+- [efitools](https://archlinux.org/packages/extra/x86_64/efitools/)
+- [openssl](https://archlinux.org/packages/core/x86_64/openssl/)
+- [sbsigntools](https://archlinux.org/packages/extra/x86_64/sbsigntools/)
+- [systemd](https://archlinux.org/packages/core/x86_64/systemd/)
 
 ## Installation
 
 0. Before you enroll your own keys, you can backup the ones which are currently deployed
-
-```sh
-# Execute as root
-efi-readvar -v PK -o old_PK.esl
-efi-readvar -v KEK -o old_KEK.esl
-efi-readvar -v db -o old_db.esl
-efi-readvar -v dbx -o old_dbx.esl
-```
+    ```sh
+    # Execute as root
+    efi-readvar -v PK -o old_PK.esl
+    efi-readvar -v KEK -o old_KEK.esl
+    efi-readvar -v db -o old_db.esl
+    efi-readvar -v dbx -o old_dbx.esl
+    ```
 
 1.  Install your favorite Linux distribution according to its documentation.
 
@@ -56,27 +50,24 @@ efi-readvar -v dbx -o old_dbx.esl
     can simply boot into UEFI setup utility and turn off Secure Boot.
 
 3.  Generate your new UEFI Secure Boot keys:
-
-```sh
-# Execute as root
-cryptboot-efikeys create
-```
+    ```sh
+    # Execute as root
+    cryptboot-efikeys create
+    ```
 
 4.  Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
+    ```sh
+    # Execute as root
+    cryptboot-efikeys enroll
+    ```
 
-```sh
-# Execute as root
-cryptboot-efikeys enroll
-```
+5.  Sign boot loader with your new UEFI Secure Boot keys:
+    ```sh
+    # Execute as root
+    cryptboot systemd-boot-sign
+    ```
 
-1.  Sign boot loader with your new UEFI Secure Boot keys:
-
-```sh
-# Execute as root
-cryptboot systemd-boot-sign
-```
-
-1.  Reboot your system, you should be completely secured against evil maid attacks from now on!
+6.  Reboot your system, you should be completely secured against evil maid attacks from now on!
 
 ## Help
 
