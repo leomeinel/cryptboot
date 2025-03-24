@@ -25,7 +25,7 @@ TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 # Load config file
 if [[ -f "${CONFIGURATION_FILE}" ]]; then
     # shellcheck source=/dev/null
-    . ${CONFIGURATION_FILE}
+    . "${CONFIGURATION_FILE}"
 else
     echo "ERROR: ${CONFIGURATION_FILE} doesn't exist!"
     exit 1

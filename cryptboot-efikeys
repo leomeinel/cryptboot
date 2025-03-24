@@ -24,7 +24,7 @@ EFI_KEYS_DIR="/etc/secureboot/keys"
 # Load config file
 if [[ -f "${CONFIGURATION_FILE}" ]]; then
     # shellcheck source=/dev/null
-    . ${CONFIGURATION_FILE}
+    . "${CONFIGURATION_FILE}"
 else
     echo "ERROR: ${CONFIGURATION_FILE} doesn't exist!"
     exit 1
