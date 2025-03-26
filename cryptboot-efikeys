@@ -102,17 +102,6 @@ create)
     cert-to-efi-sig-list -g "${GUID}" KEK.crt KEK.esl
     cert-to-efi-sig-list -g "${GUID}" db.crt db.esl
 
-    # OpROM
-    ## Save MSGUID ./MSGUID
-    MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
-    echo "${MSGUID}" >MSGUID
-    ## curl PEM format certificates for sbsign(1), sbvarsign(1) and sign-efi-sig-list(1) -> .crt
-    ### FIXME: This expires 2026-06-27 GMT
-    curl -s https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt >MS_OpROM_db.crt
-    ## Create EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
-    ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    sbsiglist --owner "${MSGUID}" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
-
     # Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
     # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
     sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt PK PK.esl PK.auth
@@ -121,11 +110,6 @@ create)
     sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt PK /dev/null PK_null.auth
     sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
     sign-efi-sig-list -g "${GUID}" -k KEK.key -c KEK.crt db db.esl db.auth
-
-    # OpROM
-    ## Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
-    ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    sign-efi-sig-list -g "${MSGUID}" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
 
     # chmod EFI_KEYS_DIR/*
     chmod 000 "${EFI_KEYS_DIR}"/*
@@ -140,7 +124,7 @@ enroll)
     check_cd_efi_keys_dir
 
     # Check for keys
-    if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]] || ! [[ -f MS_OpROM_db.esl ]]; then
+    if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]]; then
         no_keys_exit "${0}"
     fi
 
@@ -158,14 +142,6 @@ enroll)
     efi-updatevar -e -f KEK.esl KEK
     echo "Enrolling UEFI Secure Boot db key..."
     efi-updatevar -e -f db.esl db
-
-    # OpROM
-    ## Enroll OpROM
-    if ls -la /sys/firmware/efi/efivars/db*; then
-        chattr -i /sys/firmware/efi/efivars/db*
-    fi
-    echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
-    efi-updatevar -a -e -f MS_OpROM_db.esl db
 
     # Enroll PK
     echo "Enrolling UEFI Secure Boot PK key..."
