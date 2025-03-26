@@ -3,63 +3,60 @@
 # File: cryptboot
 # Author: Leopold Meinel (leo@meinel.dev)
 # -----
-# Copyright (c) 2023 Leopold Meinel & contributors
+# Copyright (c) 2025 Leopold Meinel & contributors
 # SPDX ID: GPL-3.0-or-later
 # URL: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 # -----
 ###
 
 # Check if user is root
-if [[ "$UID" -ne 0 ]]; then
-    echo "Permission denied (you must be root)"
+if [[ "${UID}" -ne 0 ]]; then
+    echo "ERROR: You can only run this script as root"
     exit 1
 fi
 
-# Default config
+# Default directory for cryptboot.conf
+CONFIGURATION_FILE=/etc/cryptboot.conf
+
+# Default config if not included in cryptboot.conf
 EFI_DIR="/efi"
-EFI_PATHS=("EFI/systemd/systemd-bootx64.efi" "EFI/BOOT/BOOTX64.EFI")
-KERNEL_PATHS=("EFI/Linux")
+TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
 # Load config file
-if [[ -f "/etc/cryptboot.conf" ]]; then
-    source "/etc/cryptboot.conf"
+if [[ -f "${CONFIGURATION_FILE}" ]]; then
+    # shellcheck source=/dev/null
+    . "${CONFIGURATION_FILE}"
 else
-    echo "/etc/cryptboot.conf doesn't exist!"
-    exit
-fi
-
-# Get path to cryptboot-efikeys executable
-EFIKEYS_BIN="$(which cryptboot-efikeys 2>/dev/null)"
-
-# Check if $EFI_DIR mountpoint exists
-if ! findmnt -sn "$EFI_DIR" &>/dev/null; then
-    echo "Couldn't find EFI System partition mountpoint '$EFI_DIR', check your /etc/fstab"
+    echo "ERROR: ${CONFIGURATION_FILE} doesn't exist!"
     exit 1
 fi
 
-# Main program
-case "$1" in
+# Check if EFI_DIR mountpoint exists
+if ! findmnt -sn "${EFI_DIR}" &>/dev/null; then
+    echo "ERROR: Couldn't find EFI System partition mountpoint '${EFI_DIR}', check your /etc/fstab"
+    exit 1
+fi
+
+case "${1}" in
 systemd-boot-sign)
+    # Sign files in TO_SIGN with UEFI secure boot keys
     echo "Signing kernel with UEFI secure boot keys..."
-    for path in "${EFI_PATHS[@]}"; do
-        if [[ -f "$EFI_DIR/$path" ]]; then
-            "$EFIKEYS_BIN" sign "$EFI_DIR/$path"
-        fi
-    done
-    for path in "${KERNEL_PATHS[@]}"; do
+    for path in "${TO_SIGN[@]}"; do
         shopt -s nocaseglob
-        for kernel in "$EFI_DIR/$path"/*.efi; do
-            "$EFIKEYS_BIN" sign "$kernel"
+        for file in "${EFI_DIR}"/"${path}"/*.efi; do
+            cryptboot-efikeys sign "${file}"
         done
     done
 
+    # Synchronize cached writes to persistent storage
     sync
     ;;
 *)
-    echo "Usage: $(basename "$0") {systemd-boot-sign|upgrade}"
-    echo
+    # Print help
+    echo "Usage: $(basename "${0}") {systemd-boot-sign}"
+    echo ""
     echo "Manage UEFI Secure Boot keys"
-    echo
+    echo ""
     echo "Commands:"
     echo "    systemd-boot-sign  Sign kernel with UEFI secure boot keys"
     ;;

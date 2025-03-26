@@ -3,178 +3,204 @@
 # File: cryptboot-efikeys
 # Author: Leopold Meinel (leo@meinel.dev)
 # -----
-# Copyright (c) 2023 Leopold Meinel & contributors
+# Copyright (c) 2025 Leopold Meinel & contributors
 # SPDX ID: GPL-3.0-or-later
 # URL: https://www.gnu.org/licenses/gpl-3.0-standalone.html
 # -----
 ###
 
 # Check if user is root
-if [[ "$UID" -ne 0 ]]; then
-    echo "Permission denied (you must be root)"
+if [[ "${UID}" -ne 0 ]]; then
+    echo "ERROR: You can only run this script as root"
     exit 1
 fi
 
-# Default config
+# Default directory for cryptboot.conf
+CONFIGURATION_FILE=/etc/cryptboot.conf
+
+# Default config if not included in cryptboot.conf
 EFI_KEYS_DIR="/etc/secureboot/keys"
 
 # Load config file
-if [[ -f "/etc/cryptboot.conf" ]]; then
-    source "/etc/cryptboot.conf"
+if [[ -f "${CONFIGURATION_FILE}" ]]; then
+    # shellcheck source=/dev/null
+    . "${CONFIGURATION_FILE}"
 else
-    echo "/etc/cryptboot.conf doesn't exist!"
-    exit
+    echo "ERROR: ${CONFIGURATION_FILE} doesn't exist!"
+    exit 1
 fi
 
-# Create UEFI Secure Boot keys directory (if it doesn't already exists)
-mkdir -p "$EFI_KEYS_DIR"
-chmod 700 "$EFI_KEYS_DIR"
+# Create UEFI Secure Boot keys directory
+mkdir -p "${EFI_KEYS_DIR}"
+chmod 700 "${EFI_KEYS_DIR}"
 
-# Main program
-case "$1" in
-create)
-    cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
-
-    if ls -la "$EFI_KEYS_DIR"/*; then
-        echo "UEFI Secure Boot keys in '$EFI_KEYS_DIR' already exists!"
-        read -n1 -r -s -p "Do you want to delete them and generate new ones [y/N]? " key
-        echo
-        if [[ "$key" != "y" ]] && [[ "$key" != "Y" ]]; then
+# Define functions
+no_keys_exit() {
+    echo "ERROR: There are no UEFI Secure Boot keys in '${EFI_KEYS_DIR}'!"
+    echo "       Please generate them first with '${1} create' and then enroll them with '${1} enroll'"
+    exit 1
+}
+check_cd_efi_keys_dir() {
+    cd "${EFI_KEYS_DIR}" ||
+        {
+            echo "ERROR: Incorrect EFI_KEYS_DIR specified!"
             exit 1
-        fi
-        rm -rf "${EFI_KEYS_DIR:?}"/*
+        }
+}
+check_file() {
+    if [[ -z "${1}" ]]; then
+        echo "ERROR: You have to specify [file-to-sign-or-verify] as second argument!"
+        exit 1
     fi
+}
 
+case "${1}" in
+create)
+    # cd to EFI_KEYS_DIR
+    check_cd_efi_keys_dir
+
+    # Prompt to confirm erasure of UEFI Secure Boot keys in EFI_KEYS_DIR
+    if ls -la "${EFI_KEYS_DIR}"/*; then
+        echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR}' already exists!"
+        read -rp "Do you want to delete them and generate new ones? (Type 'yes' in capital letters): " choice
+        case "${choice}" in
+        YES)
+            rm -rf "${EFI_KEYS_DIR:?}"/*
+            ;;
+        *)
+            echo "ERROR: User aborted generating secureboot keys"
+            exit 1
+            ;;
+        esac
+    fi
     echo "Creating new UEFI Secure Boot keys..."
-    read -p "Enter a Common Name: " NAME
-    echo "$NAME" >NAME
 
-    openssl req -newkey rsa:4096 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME PK/" -out PK.crt
-    openssl req -newkey rsa:4096 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME KEK/" -out KEK.crt
-    openssl req -newkey rsa:4096 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=$NAME db/" -out db.crt
+    # Prompt for common name and save to ./NAME
+    read -rp "Enter a Common Name: " NAME
+    echo "${NAME}" >NAME
 
+    # Generate PEM format private keys for EFI binary and EFI signature list signing and PEM format certificates for sbsign(1), sbvarsign(1) and sign-efi-sig-list(1) -> .key, .crt
+    # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
+    openssl req -newkey rsa:4096 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} PK/" -out PK.crt
+    openssl req -newkey rsa:4096 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} KEK/" -out KEK.crt
+    openssl req -newkey rsa:4096 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} db/" -out db.crt
+
+    # Generate DER format certificates for firmware -> .cer
+    # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
     openssl x509 -outform DER -in PK.crt -out PK.cer
     openssl x509 -outform DER -in KEK.crt -out KEK.cer
     openssl x509 -outform DER -in db.crt -out db.cer
 
+    # Create a GUID for owner identification
+    # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
     GUID="$(uuidgen --random)"
-    echo "$GUID" >GUID
+    echo "${GUID}" >GUID
 
-    cert-to-efi-sig-list -g "$GUID" PK.crt PK.esl
-    cert-to-efi-sig-list -g "$GUID" KEK.crt KEK.esl
-    cert-to-efi-sig-list -g "$GUID" db.crt db.esl
+    # Generate Certificates in an EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
+    # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
+    cert-to-efi-sig-list -g "${GUID}" PK.crt PK.esl
+    cert-to-efi-sig-list -g "${GUID}" KEK.crt KEK.esl
+    cert-to-efi-sig-list -g "${GUID}" db.crt db.esl
 
-    echo -n >PK_null.esl
+    # Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
+    # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
+    sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt PK PK.esl PK.auth
+    ## Sign an empty file to allow removing Platform Key when in "User Mode"
+    ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
+    sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt PK /dev/null PK_null.auth
+    sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
+    sign-efi-sig-list -g "${GUID}" -k KEK.key -c KEK.crt db db.esl db.auth
 
-    sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK.esl PK.auth
-    sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt PK PK_null.esl PK_null.auth
-    sign-efi-sig-list -g "$GUID" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
-    sign-efi-sig-list -g "$GUID" -k KEK.key -c KEK.crt db db.esl db.auth
+    # chmod EFI_KEYS_DIR/*
+    chmod 000 "${EFI_KEYS_DIR}"/*
 
-    chmod 000 "$EFI_KEYS_DIR"/*
+    # Synchronize cached writes to persistent storage
     sync
 
-    echo "New UEFI Secure Boot keys created in '$EFI_KEYS_DIR'"
+    echo "New UEFI Secure Boot keys created in '${EFI_KEYS_DIR}'"
     ;;
 enroll)
-    cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+    # cd to EFI_KEYS_DIR
+    check_cd_efi_keys_dir
 
+    # Check for keys
     if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]]; then
-        echo "There are no UEFI Secure Boot keys in '$EFI_KEYS_DIR'!"
-        echo "Please generate them first with '$0 create'"
-        exit 1
+        no_keys_exit "${0}"
     fi
 
+    # Enroll KEK and db
     if ls -la /sys/firmware/efi/efivars/PK*; then
         chattr -i /sys/firmware/efi/efivars/PK*
     fi
-
     if ls -la /sys/firmware/efi/efivars/KEK*; then
         chattr -i /sys/firmware/efi/efivars/KEK*
     fi
-
     if ls -la /sys/firmware/efi/efivars/db*; then
         chattr -i /sys/firmware/efi/efivars/db*
     fi
-
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -e -f KEK.esl KEK
-
     echo "Enrolling UEFI Secure Boot db key..."
     efi-updatevar -e -f db.esl db
 
+    # Enroll PK
     echo "Enrolling UEFI Secure Boot PK key..."
     efi-updatevar -f PK.auth PK
 
-    echo "UEFI Secure Boot keys in '$EFI_KEYS_DIR' enrolled to UEFI firmware."
+    echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR}' enrolled to UEFI firmware."
     echo "You should now sign your boot loader and reboot!"
     ;;
 sign)
-    cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+    # cd to EFI_KEYS_DIR and check arguments
+    check_cd_efi_keys_dir
+    check_file "${2}"
+    FILENAME="${2}"
 
-    filename="$2"
-    if [[ -z "$filename" ]]; then
-        echo "You have to specify EFI boot image file for signing it with UEFI Secure Boot keys!"
-        exit 1
-    fi
-
+    # Check for keys
     if ! [[ -f db.key ]] || ! [[ -f db.crt ]]; then
-        echo "There are no UEFI Secure Boot keys in '$EFI_KEYS_DIR'!"
-        echo "Please generate them first with '$0 create' and then enroll them with '$0 enroll'"
-        exit 1
+        no_keys_exit "${0}"
     fi
-    sbverify --cert db.crt "$filename" ||
-    {
-        echo "Signing file '$filename' with UEFI Secure Boot keys..."
-        sbsign --key db.key --cert db.crt --output "$filename" "$filename"
-        sync
-    }
+
+    # Sign FILENAME
+    sbverify --cert db.crt "${FILENAME}" ||
+        {
+            echo "Signing file '${FILENAME}' with UEFI Secure Boot keys..."
+            sbsign --key db.key --cert db.crt --output "${FILENAME}" "${FILENAME}"
+
+            ## Synchronize cached writes to persistent storage
+            sync
+        }
     ;;
 verify)
-    cd "$EFI_KEYS_DIR" ||
-    {
-        echo "You have to specify EFI_KEYS_DIR!"
-        exit
-    }
+    # cd to EFI_KEYS_DIR and check arguments
+    check_cd_efi_keys_dir
+    check_file "${2}"
+    FILENAME="${2}"
 
-    filename="$2"
-    if [[ -z "$filename" ]]; then
-        echo "You have to specify EFI boot image file to verify its signature!"
-        exit 1
-    fi
-
+    # Check for keys
     if ! [[ -f db.crt ]]; then
-        echo "There are no UEFI Secure Boot keys in '$EFI_KEYS_DIR'!"
-        echo "Please generate them first with '$0 create' and then enroll them with '$0 enroll'"
-        exit 1
+        no_keys_exit "${0}"
     fi
-    echo "List of all signatures in '$filename':"
-    sbverify --list "$filename"
-    echo
 
+    # List signatures in FILENAME
+    echo "List of all signatures in '${FILENAME}':"
+    sbverify --list "${FILENAME}"
+    echo ""
+
+    # Verify FILENAME
     echo "Verifying signature with UEFI Secure Boot keys..."
-    sbverify --cert db.crt "$filename"
+    sbverify --cert db.crt "${FILENAME}"
     ;;
 list)
+    # List all UEFI Secure Boot keys enrolled in your UEFI firmware
     echo "All UEFI Secure Boot keys enrolled in your UEFI firmware:"
     efi-readvar
     ;;
 status)
+    # Check if UEFI Secure Boot is active or inactive
     echo -n "UEFI Secure Boot status: "
     secureboot="$(od -An -t u1 --read-bytes=1 --skip-bytes=4 /sys/firmware/efi/efivars/SecureBoot-*)"
-    if [[ "$secureboot" -eq 1 ]]; then
+    if [[ "${secureboot}" -eq 1 ]]; then
         echo "ACTIVE"
         exit 0
     else
@@ -183,10 +209,11 @@ status)
     fi
     ;;
 *)
-    echo "Usage: $(basename "$0") {create,enroll,sign,verify,list} [file-to-sign-or-verify]"
-    echo
+    # Print help
+    echo "Usage: $(basename "${0}") {create,enroll,sign,verify,list} [file-to-sign-or-verify]"
+    echo ""
     echo "Manage UEFI Secure Boot keys"
-    echo
+    echo ""
     echo "Commands:"
     echo "    create  Generate new UEFI Secure Boot keys"
     echo "    enroll  Enroll new UEFI Secure Boot keys to your UEFI firmware"
