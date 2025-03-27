@@ -200,7 +200,6 @@ sign)
     check_cd_efi_keys_dir
     FILENAME="${2}"
     check_file "${FILENAME}"
-    
 
     # Check for keys
     if ! [[ -f db.key ]] || ! [[ -f db.crt ]]; then
