@@ -188,6 +188,7 @@ enroll)
     for file in /sys/firmware/efi/efivars/db*; do
         chattr -i "${file}" || true
     done
+    efi-updatevar -d 0 -k "${PK}" PK
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -k "${PK}" -f KEK.auth KEK
     echo "Enrolling UEFI Secure Boot db key..."
