@@ -157,6 +157,7 @@ create)
     # Synchronize cached writes to persistent storage
     sync
 
+    # Notify user if script has finished successfully
     echo "New UEFI Secure Boot keys created in '${EFI_KEYS_DIR:?}/keys'"
     ;;
 enroll)
@@ -179,6 +180,7 @@ enroll)
     fi
 
     # Enroll KEK and db
+    ## Change file attributes
     for file in /sys/firmware/efi/efivars/PK*; do
         chattr -i "${file}" || true
     done
@@ -188,7 +190,9 @@ enroll)
     for file in /sys/firmware/efi/efivars/db*; do
         chattr -i "${file}" || true
     done
+    ## Reset system to setup mode
     efi-updatevar -d 0 -k "${PK}" PK
+    ## Enroll
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -k "${PK}" -f KEK.auth KEK
     echo "Enrolling UEFI Secure Boot db key..."
@@ -196,6 +200,7 @@ enroll)
 
     # Enroll MS_OpROM_db.esl
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
+        ## Change file attributes
         for file in /sys/firmware/efi/efivars/db*; do
             chattr -i "${file}" || true
         done
@@ -207,6 +212,7 @@ enroll)
     echo "Enrolling UEFI Secure Boot PK key..."
     efi-updatevar -k "${PK}" -f PK.auth PK
 
+    # Notify user if script has finished successfully
     echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' enrolled to UEFI firmware."
     echo "You should now sign your boot loader and reboot!"
     ;;
