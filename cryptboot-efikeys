@@ -22,14 +22,14 @@ fi
 CONFIGURATION_FILE=/etc/cryptboot.conf
 
 # UEFI Secure Boot keys directory
-EFI_KEYS_DIR="/etc/secureboot/keys"
+EFI_KEYS_DIR="/etc/secureboot"
 
 # Option ROM
 ## See: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom
 ##      Setting ENABLE_OPROM="false" might soft brick your device. Make sure that your hardware doesn't need oproms
 ## If you plan on changing this setting after enrolling, you will have to issue the following commands again:
 ##     cryptboot-efikeys create
-##     cryptboot-efikeys enroll
+##     cryptboot-efikeys enroll [PK.key] [KEK.key]
 ##     cryptboot systemd-boot-sign
 ENABLE_OPROM="true"
 
@@ -43,41 +43,41 @@ else
 fi
 
 # Create UEFI Secure Boot keys directory
-mkdir -p "${EFI_KEYS_DIR}"
-chmod 700 "${EFI_KEYS_DIR}"
+mkdir -p "${EFI_KEYS_DIR:?}"/keys
+chmod 700 "${EFI_KEYS_DIR:?}"/keys
 
 # Define functions
 no_keys_exit() {
-    echo "ERROR: There are no UEFI Secure Boot keys in '${EFI_KEYS_DIR}'!"
+    echo "ERROR: There are no UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys'!"
     echo "       Please generate them first with '${1} create' and then enroll them with '${1} enroll'"
     exit 1
 }
 check_cd_efi_keys_dir() {
-    cd "${EFI_KEYS_DIR}" ||
+    cd "${EFI_KEYS_DIR:?}/keys" ||
         {
             echo "ERROR: Incorrect EFI_KEYS_DIR specified!"
             exit 1
         }
 }
-check_file() {
-    if [[ -z "${1}" ]]; then
-        echo "ERROR: You have to specify [file-to-sign-or-verify] as second argument!"
+check_arg() {
+    if [[ -z "${2}" ]]; then
+        echo "ERROR: You have to specify [${1}] as second argument!"
         exit 1
     fi
 }
 
 case "${1}" in
 create)
-    # cd to EFI_KEYS_DIR
+    # cd to EFI_KEYS_DIR/keys
     check_cd_efi_keys_dir
 
-    # Prompt to confirm erasure of UEFI Secure Boot keys in EFI_KEYS_DIR
-    for file in "${EFI_KEYS_DIR}"/*; do
-        echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR}' already exists!"
+    # Prompt to confirm erasure of UEFI Secure Boot keys in EFI_KEYS_DIR/keys
+    for file in "${EFI_KEYS_DIR:?}"/keys/*; do
+        echo "WARNING: UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' already exists!"
         read -rp "Do you want to delete them and generate new ones? (Type 'yes' in capital letters): " choice
         case "${choice}" in
         YES)
-            rm -rf "${EFI_KEYS_DIR:?}"/*
+            rm -rf "${EFI_KEYS_DIR:?}"/keys/*
             ;;
         *)
             echo "ERROR: User aborted generating secureboot keys"
@@ -144,17 +144,21 @@ create)
         sign-efi-sig-list -g "${MSGUID}" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
     fi
 
-    # chmod EFI_KEYS_DIR/*
-    chmod 000 "${EFI_KEYS_DIR}"/*
+    # chmod EFI_KEYS_DIR/keys/*
+    chmod 000 "${EFI_KEYS_DIR:?}"/keys/*
 
     # Synchronize cached writes to persistent storage
     sync
 
-    echo "New UEFI Secure Boot keys created in '${EFI_KEYS_DIR}'"
+    echo "New UEFI Secure Boot keys created in '${EFI_KEYS_DIR:?}/keys'"
     ;;
 enroll)
-    # cd to EFI_KEYS_DIR
+    # cd to EFI_KEYS_DIR/keys and check arguments
     check_cd_efi_keys_dir
+    PK="${2}"
+    KEK="${3}"
+    check_arg "PK.key" "${PK}"
+    check_arg "KEK.key" "${KEK}"
 
     # Check for keys
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
@@ -178,9 +182,9 @@ enroll)
         chattr -i "${file}" || true
     done
     echo "Enrolling UEFI Secure Boot KEK key..."
-    efi-updatevar -e -f KEK.esl KEK
+    efi-updatevar -k "${PK}" -f KEK.auth KEK
     echo "Enrolling UEFI Secure Boot db key..."
-    efi-updatevar -e -f db.esl db
+    efi-updatevar -k "${KEK}" -f db.auth db
 
     # Enroll MS_OpROM_db.esl
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
@@ -188,21 +192,21 @@ enroll)
             chattr -i "${file}" || true
         done
         echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
-        efi-updatevar -a -e -f MS_OpROM_db.esl db
+        efi-updatevar -k "${KEK}" -a -f MS_OpROM_db.auth db
     fi
 
     # Enroll PK
     echo "Enrolling UEFI Secure Boot PK key..."
-    efi-updatevar -f PK.auth PK
+    efi-updatevar -k "${PK}" -f PK.auth PK
 
-    echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR}' enrolled to UEFI firmware."
+    echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' enrolled to UEFI firmware."
     echo "You should now sign your boot loader and reboot!"
     ;;
 sign)
-    # cd to EFI_KEYS_DIR and check arguments
+    # cd to EFI_KEYS_DIR/keys and check arguments
     check_cd_efi_keys_dir
     FILENAME="${2}"
-    check_file "${FILENAME}"
+    check_arg "file" "${FILENAME}"
 
     # Check for keys
     if ! [[ -f db.key ]] || ! [[ -f db.crt ]]; then
@@ -220,10 +224,10 @@ sign)
         }
     ;;
 verify)
-    # cd to EFI_KEYS_DIR and check arguments
+    # cd to EFI_KEYS_DIR/keys and check arguments
     check_cd_efi_keys_dir
     FILENAME="${2}"
-    check_file "${FILENAME}"
+    check_arg "file" "${FILENAME}"
 
     # Check for keys
     if ! [[ -f db.crt ]]; then
@@ -258,7 +262,9 @@ status)
     ;;
 *)
     # Print help
-    echo "Usage: $(basename "${0}") {create,enroll,sign,verify,list} [file-to-sign-or-verify]"
+    echo "Usage: $(basename "${0}") {create,list,status}"
+    echo "       $(basename "${0}") {enroll} [PK.key] [KEK.key]"
+    echo "       $(basename "${0}") {sign,verify} [file]"
     echo ""
     echo "Manage UEFI Secure Boot keys"
     echo ""

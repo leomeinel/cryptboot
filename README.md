@@ -58,7 +58,7 @@ There might be other packages that are needed for scripts and configs to functio
 4.  Enroll your newly generated UEFI Secure Boot keys into UEFI firmware:
     ```sh
     # Execute as root
-    cryptboot-efikeys enroll
+    cryptboot-efikeys enroll [PK.key] [KEK.key]
     ```
 
 5.  Sign boot loader with your new UEFI Secure Boot keys:
@@ -85,7 +85,9 @@ Commands:
 ### cryptboot-efikeys
 
 ```
-Usage: cryptboot-efikeys {create,enroll,sign,verify,list} [file-to-sign-or-verify]
+Usage: cryptboot-efikeys {create,list,status}
+       cryptboot-efikeys {enroll} [PK.key] [KEK.key]
+       cryptboot-efikeys {sign,verify} [file]
 
 Manage UEFI Secure Boot keys
 
@@ -110,14 +112,14 @@ EFI_DIR="/efi"
 TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
 # UEFI Secure Boot keys directory
-EFI_KEYS_DIR="/etc/secureboot/keys"
+EFI_KEYS_DIR="/etc/secureboot"
 
 # Option ROM
 ## See: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom
 ##      Setting ENABLE_OPROM="false" might soft brick your device. Make sure that your hardware doesn't need oproms
 ## If you plan on changing this setting after enrolling, you will have to issue the following commands again:
 ##     cryptboot-efikeys create
-##     cryptboot-efikeys enroll
+##     cryptboot-efikeys enroll [PK.key] [KEK.key]
 ##     cryptboot systemd-boot-sign
 ENABLE_OPROM="true"
 ```
