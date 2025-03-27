@@ -9,6 +9,9 @@
 # -----
 ###
 
+# Fail on error
+set -e
+
 # Check if user is root
 if [[ "${UID}" -ne 0 ]]; then
     echo "ERROR: You can only run this script as root"
