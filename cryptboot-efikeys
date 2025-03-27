@@ -69,7 +69,7 @@ create)
     check_cd_efi_keys_dir
 
     # Prompt to confirm erasure of UEFI Secure Boot keys in EFI_KEYS_DIR
-    if ls -la "${EFI_KEYS_DIR}"/*; then
+    for file in "${EFI_KEYS_DIR}"/*; do
         echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR}' already exists!"
         read -rp "Do you want to delete them and generate new ones? (Type 'yes' in capital letters): " choice
         case "${choice}" in
@@ -81,7 +81,8 @@ create)
             exit 1
             ;;
         esac
-    fi
+        break
+    done
     echo "Creating new UEFI Secure Boot keys..."
 
     # Prompt for common name and save to ./NAME
@@ -164,15 +165,15 @@ enroll)
     fi
 
     # Enroll KEK and db
-    if ls -la /sys/firmware/efi/efivars/PK*; then
-        chattr -i /sys/firmware/efi/efivars/PK*
-    fi
-    if ls -la /sys/firmware/efi/efivars/KEK*; then
-        chattr -i /sys/firmware/efi/efivars/KEK*
-    fi
-    if ls -la /sys/firmware/efi/efivars/db*; then
-        chattr -i /sys/firmware/efi/efivars/db*
-    fi
+    for file in /sys/firmware/efi/efivars/PK*; do
+        chattr -i "${file}" || true
+    done
+    for file in /sys/firmware/efi/efivars/KEK*; do
+        chattr -i "${file}" || true
+    done
+    for file in /sys/firmware/efi/efivars/db*; do
+        chattr -i "${file}" || true
+    done
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -e -f KEK.esl KEK
     echo "Enrolling UEFI Secure Boot db key..."
@@ -180,9 +181,9 @@ enroll)
 
     # Enroll MS_OpROM_db.esl
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
-        if ls -la /sys/firmware/efi/efivars/db*; then
-            chattr -i /sys/firmware/efi/efivars/db*
-        fi
+        for file in /sys/firmware/efi/efivars/db*; do
+            chattr -i "${file}" || true
+        done
         echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
         efi-updatevar -a -e -f MS_OpROM_db.esl db
     fi
