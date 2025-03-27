@@ -75,7 +75,7 @@ create)
 
     # Prompt to confirm erasure of UEFI Secure Boot keys in EFI_KEYS_DIR/keys
     for file in "${EFI_KEYS_DIR:?}"/keys/*; do
-        [[ -f $file ]] || continue
+        [[ -f "${file}" ]] || continue
         DATE="$(date +"%FT%H-%M-%S")"
         BACKUP_PATH="${EFI_KEYS_DIR:?}"/backup/keys/"${DATE}".bak
         echo "WARNING: UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' already exists!"
@@ -183,15 +183,15 @@ enroll)
     # Enroll KEK and db
     ## Change file attributes
     for file in /sys/firmware/efi/efivars/PK*; do
-        [[ -f $file ]] || continue
+        [[ -f "${file}" ]] || continue
         chattr -i "${file}" || true
     done
     for file in /sys/firmware/efi/efivars/KEK*; do
-        [[ -f $file ]] || continue
+        [[ -f "${file}" ]] || continue
         chattr -i "${file}" || true
     done
     for file in /sys/firmware/efi/efivars/db*; do
-        [[ -f $file ]] || continue
+        [[ -f "${file}" ]] || continue
         chattr -i "${file}" || true
     done
     ## Reset system to setup mode
@@ -206,7 +206,7 @@ enroll)
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Change file attributes
         for file in /sys/firmware/efi/efivars/db*; do
-            [[ -f $file ]] || continue
+            [[ -f "${file}" ]] || continue
             chattr -i "${file}" || true
         done
         ## Enroll

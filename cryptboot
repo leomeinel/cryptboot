@@ -51,7 +51,7 @@ systemd-boot-sign)
         [[ -d "${dir}" ]] || continue
         shopt -s nocaseglob
         for file in "${EFI_DIR}"/"${dir}"/*.efi; do
-            [[ -f $file ]] || continue
+            [[ -f "${file}" ]] || continue
             cryptboot-efikeys sign "${file}"
         done
     done
