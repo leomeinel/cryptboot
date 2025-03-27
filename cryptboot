@@ -37,6 +37,11 @@ else
     exit 1
 fi
 
+# Define functions
+var_invalid_warning() {
+    echo "WARNING: '${1}' isn't valid in '{$2}'"
+}
+
 # Check if EFI_DIR mountpoint exists
 if ! findmnt -sn "${EFI_DIR}" &>/dev/null; then
     echo "ERROR: Couldn't find EFI System partition mountpoint '${EFI_DIR}', check your /etc/fstab"
@@ -48,10 +53,18 @@ systemd-boot-sign)
     # Sign files in TO_SIGN with UEFI secure boot keys
     echo "Signing kernel with UEFI secure boot keys..."
     for dir in "${TO_SIGN[@]}"; do
-        [[ -d "${dir}" ]] || continue
+        [[ -d "${dir}" ]] ||
+            {
+                var_invalid_warning "${dir}" "TO_SIGN"
+                continue
+            }
         shopt -s nocaseglob
         for file in "${EFI_DIR}"/"${dir}"/*.efi; do
-            [[ -f "${file}" ]] || continue
+            [[ -f "${file}" ]] ||
+                {
+                    var_invalid_warning "${file}" "${EFI_DIR}/${dir}/*.efi"
+                    continue
+                }
             cryptboot-efikeys sign "${file}"
         done
     done
