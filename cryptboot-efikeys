@@ -15,7 +15,7 @@ if [[ "${UID}" -ne 0 ]]; then
     exit 1
 fi
 
-# Default directory for cryptboot.conf
+# Default path for cryptboot.conf
 CONFIGURATION_FILE=/etc/cryptboot.conf
 
 # UEFI Secure Boot keys directory
@@ -113,7 +113,7 @@ create)
 
     # Obtain MS_OpROM_db
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
-        ## Save MSGUID ./MSGUID
+        ## Save MSGUID
         MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
         echo "${MSGUID}" >MSGUID
         ## curl PEM format certificates for sbsign(1), sbvarsign(1) and sign-efi-sig-list(1) -> .crt

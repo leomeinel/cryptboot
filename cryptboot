@@ -15,14 +15,14 @@ if [[ "${UID}" -ne 0 ]]; then
     exit 1
 fi
 
-# Default directory for cryptboot.conf
+# Default path for cryptboot.conf
 CONFIGURATION_FILE=/etc/cryptboot.conf
 
 # EFI System partition mount point (has to be specified in /etc/fstab)
 EFI_DIR="/efi"
 
 # List of paths with images to sign
-## format: ("a" "b")
+## Format: ("a" "b")
 TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
 # Load config file
