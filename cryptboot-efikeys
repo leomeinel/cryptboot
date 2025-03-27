@@ -244,8 +244,8 @@ list)
 status)
     # Check if UEFI Secure Boot is active or inactive
     echo -n "UEFI Secure Boot status: "
-    secureboot="$(od -An -t u1 --read-bytes=1 --skip-bytes=4 /sys/firmware/efi/efivars/SecureBoot-*)"
-    if [[ "${secureboot}" -eq 1 ]]; then
+    SECUREBOOT_ENABLED="$(od -An -t u1 --read-bytes=1 --skip-bytes=4 /sys/firmware/efi/efivars/SecureBoot-*)"
+    if [[ "${SECUREBOOT_ENABLED}" -eq 1 ]]; then
         echo "ACTIVE"
         exit 0
     else
