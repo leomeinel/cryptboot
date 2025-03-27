@@ -111,6 +111,11 @@ TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
 # UEFI Secure Boot keys directory
 EFI_KEYS_DIR="/etc/secureboot/keys"
+
+# Option ROM
+## See: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom
+##      Setting ENABLE_OPROM="false" might soft brick your device. Make sure that your hardware doesn't need oproms.
+ENABLE_OPROM="true"
 ```
 
 ## Limitations
