@@ -77,7 +77,8 @@ create)
     for file in "${EFI_KEYS_DIR:?}"/keys/*; do
         DATE="$(date +"%FT%H-%M-%S")"
         BACKUP_PATH="${EFI_KEYS_DIR:?}"/backup/keys/"${DATE}".bak
-        echo "WARNING: UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' already exists! A backup will be created at '${BACKUP_PATH:?}'."
+        echo "WARNING: UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' already exists!"
+        echo "         A backup will be created at '${BACKUP_PATH:?}'."
         read -rp "Do you want to delete them and generate new ones? (Type 'yes' in capital letters): " choice
         case "${choice}" in
         YES)
