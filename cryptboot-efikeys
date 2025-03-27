@@ -30,7 +30,7 @@ EFI_KEYS_DIR="/etc/secureboot/keys"
 ##     cryptboot systemd-boot-sign
 ENABLE_OPROM="true"
 
-# Load config file
+# Source config
 if [[ -f "${CONFIGURATION_FILE}" ]]; then
     # shellcheck source=/dev/null
     . "${CONFIGURATION_FILE}"
