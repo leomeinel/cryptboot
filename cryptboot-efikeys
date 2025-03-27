@@ -204,6 +204,7 @@ enroll)
         for file in /sys/firmware/efi/efivars/db*; do
             chattr -i "${file}" || true
         done
+        ## Enroll
         echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
         efi-updatevar -k "${KEK}" -a -f MS_OpROM_db.auth db
     fi
