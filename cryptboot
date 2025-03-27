@@ -18,8 +18,11 @@ fi
 # Default directory for cryptboot.conf
 CONFIGURATION_FILE=/etc/cryptboot.conf
 
-# Default config if not included in cryptboot.conf
+# EFI System partition mount point (has to be specified in /etc/fstab)
 EFI_DIR="/efi"
+
+# List of paths with images to sign
+## format: ("a" "b")
 TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
 
 # Load config file
