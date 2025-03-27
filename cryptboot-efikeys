@@ -198,8 +198,9 @@ enroll)
 sign)
     # cd to EFI_KEYS_DIR and check arguments
     check_cd_efi_keys_dir
-    check_file "${2}"
     FILENAME="${2}"
+    check_file "${FILENAME}"
+    
 
     # Check for keys
     if ! [[ -f db.key ]] || ! [[ -f db.crt ]]; then
@@ -219,8 +220,8 @@ sign)
 verify)
     # cd to EFI_KEYS_DIR and check arguments
     check_cd_efi_keys_dir
-    check_file "${2}"
     FILENAME="${2}"
+    check_file "${FILENAME}"
 
     # Check for keys
     if ! [[ -f db.crt ]]; then
