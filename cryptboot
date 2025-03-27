@@ -47,9 +47,11 @@ case "${1}" in
 systemd-boot-sign)
     # Sign files in TO_SIGN with UEFI secure boot keys
     echo "Signing kernel with UEFI secure boot keys..."
-    for path in "${TO_SIGN[@]}"; do
+    for dir in "${TO_SIGN[@]}"; do
+        [[ -d "${dir}" ]] || continue
         shopt -s nocaseglob
-        for file in "${EFI_DIR}"/"${path}"/*.efi; do
+        for file in "${EFI_DIR}"/"${dir}"/*.efi; do
+            [[ -f $file ]] || continue
             cryptboot-efikeys sign "${file}"
         done
     done
