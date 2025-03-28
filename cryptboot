@@ -39,7 +39,7 @@ fi
 
 # Define functions
 var_invalid_warning() {
-    echo "WARNING: '${1}' isn't valid in '{$2}'"
+    echo "WARNING: '${1}' isn't valid in '${2}'"
 }
 
 # Check if EFI_DIR mountpoint exists

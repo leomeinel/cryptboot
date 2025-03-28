@@ -68,7 +68,7 @@ check_arg() {
     fi
 }
 var_invalid_warning() {
-    echo "WARNING: '${1}' isn't valid in '{$2}'"
+    echo "WARNING: '${1}' isn't valid in '${2}'"
 }
 
 case "${1}" in
