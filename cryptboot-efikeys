@@ -220,7 +220,7 @@ enroll)
         chattr -i "${file}" || true
     done
     ## Reset system to setup mode
-    efi-updatevar -d 0 -k "${PK}" PK
+    efi-updatevar -d 0 -k "${PK}" PK || true
     ## Enroll
     echo "Enrolling UEFI Secure Boot KEK key..."
     efi-updatevar -k "${PK}" -f KEK.auth KEK
