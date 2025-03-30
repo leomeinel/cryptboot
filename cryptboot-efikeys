@@ -25,7 +25,7 @@ check_arg() {
         exit 1
     fi
 }
-check_cd() {
+checked_cd() {
     cd "${1:?}" ||
         {
             log_err "Could not 'cd' into '${1:?}'"
@@ -80,7 +80,7 @@ fi
 case "${1}" in
 create)
     # cd to EFI_KEYS_DIR/keys
-    check_cd "${EFI_KEYS_DIR:?}/keys"
+    checked_cd "${EFI_KEYS_DIR:?}/keys"
 
     # Prompt to confirm erasure of UEFI Secure Boot keys in EFI_KEYS_DIR/keys
     for file in "${EFI_KEYS_DIR:?}"/keys/*; do
@@ -186,7 +186,7 @@ enroll)
         ;;
     esac
     # cd to EFI_KEYS_DIR/keys and check arguments
-    check_cd "${EFI_KEYS_DIR:?}/keys"
+    checked_cd "${EFI_KEYS_DIR:?}/keys"
     PK="${2}"
     KEK="${3}"
     check_arg "PK.key" "${PK}"
@@ -263,7 +263,7 @@ enroll)
     ;;
 sign)
     # cd to EFI_KEYS_DIR/keys and check arguments
-    check_cd "${EFI_KEYS_DIR:?}/keys"
+    checked_cd "${EFI_KEYS_DIR:?}/keys"
     FILENAME="${2}"
     check_arg "file" "${FILENAME}"
 
@@ -284,7 +284,7 @@ sign)
     ;;
 verify)
     # cd to EFI_KEYS_DIR/keys and check arguments
-    check_cd "${EFI_KEYS_DIR:?}/keys"
+    checked_cd "${EFI_KEYS_DIR:?}/keys"
     FILENAME="${2}"
     check_arg "file" "${FILENAME}"
 
