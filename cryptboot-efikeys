@@ -220,11 +220,11 @@ enroll)
 
     # Check for keys
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
-        if ! [[ -f ./KEK.esl ]] || ! [[ -f ./db.esl ]] || ! [[ -f ./PK.auth ]] || ! [[ -f ./MS_cert_bundle_db.esl ]]; then
+        if ! [[ -f ./KEK.auth ]] || ! [[ -f ./db.auth ]] || ! [[ -f ./PK.auth ]] || ! [[ -f ./MS_cert_bundle_db.auth ]]; then
             exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
         fi
     else
-        if ! [[ -f ./KEK.esl ]] || ! [[ -f ./db.esl ]] || ! [[ -f ./PK.auth ]]; then
+        if ! [[ -f ./KEK.auth ]] || ! [[ -f ./db.auth ]] || ! [[ -f ./PK.auth ]]; then
             exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
         fi
     fi
@@ -258,9 +258,9 @@ enroll)
     ## Reset system to setup mode
     efi-updatevar -d 0 -k "${PK}" PK || true
     ## Enroll
-    echo "Enrolling UEFI Secure Boot KEK key..."
+    echo "Enrolling UEFI Secure Boot KEK.auth..."
     efi-updatevar -k "${PK}" -f ./KEK.auth KEK
-    echo "Enrolling UEFI Secure Boot db key..."
+    echo "Enrolling UEFI Secure Boot db.auth..."
     efi-updatevar -k "${KEK}" -f ./db.auth db
 
     # Enroll MS_cert_bundle_db.auth
@@ -275,12 +275,12 @@ enroll)
             chattr -i "${file}" || true
         done
         ## Enroll
-        echo "Enrolling UEFI Secure Boot MS_cert_bundle_db key..."
+        echo "Enrolling UEFI Secure Boot MS_cert_bundle_db.auth..."
         efi-updatevar -k "${KEK}" -a -f ./MS_cert_bundle_db.auth db
     fi
 
     # Enroll PK.auth
-    echo "Enrolling UEFI Secure Boot PK key..."
+    echo "Enrolling UEFI Secure Boot PK.auth..."
     efi-updatevar -k "${PK}" -f ./PK.auth PK
 
     # Notify user if script has finished successfully
