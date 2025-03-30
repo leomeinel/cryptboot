@@ -227,7 +227,7 @@ enroll)
     echo "Enrolling UEFI Secure Boot db key..."
     efi-updatevar -k "${KEK}" -f db.auth db
 
-    # Enroll MS_OpROM_db.esl
+    # Enroll MS_OpROM_db
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Change file attributes
         for file in /sys/firmware/efi/efivars/db*; do
