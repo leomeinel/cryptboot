@@ -136,17 +136,41 @@ create)
     cert-to-efi-sig-list -g "${GUID}" KEK.crt KEK.esl
     cert-to-efi-sig-list -g "${GUID}" db.crt db.esl
 
-    # Obtain MS_OpROM_db
+    # Obtain MS_cert_bundle_db.crt
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Save MSGUID
         MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
         echo "${MSGUID}" >MSGUID
         ## curl PEM format certificates for sbsign(1), sbvarsign(1) and sign-efi-sig-list(1) -> .crt
-        ### FIXME: This expires 2026-06-27 GMT
-        curl -s https://www.microsoft.com/pkiops/certs/MicCorUEFCA2011_2011-06-27.crt >MS_OpROM_db.crt
+        curl -Ls https://go.microsoft.com/fwlink/p/?linkid=321194 >Microsoft_Corporation_UEFI_CA_2011.crt
+        curl -Ls https://go.microsoft.com/fwlink/?linkid=2239872 >Microsoft_UEFI_CA_2023.crt
+        curl -Ls https://go.microsoft.com/fwlink/?linkid=2284009 >Microsoft_Option_ROM_UEFI_CA_2023.crt
+        SHA1SUMS="$(
+            cat <<'EOF'
+46def63b5ce61cf8ba0de2e6639c1019d0ed14f3 ./Microsoft_Corporation_UEFI_CA_2011.crt
+3fb39e2b8bd183bf9e4594e72183ca60afcd4277 ./Microsoft_Option_ROM_UEFI_CA_2023.crt
+b5eeb4a6706048073f0ed296e7f580a790b59eaa ./Microsoft_UEFI_CA_2023.crt
+EOF
+        )"
+        SHA256SUMS="$(
+            cat <<'EOF'
+48e99b991f57fc52f76149599bff0a58c47154229b9f8d603ac40d3500248507 ./Microsoft_Corporation_UEFI_CA_2011.crt
+e5be3e64c6e66a281457ecdece0d6d0787577aad2a3a0144262c10c14ba8d8f1 ./Microsoft_Option_ROM_UEFI_CA_2023.crt
+f6124e34125bee3fe6d79a574eaa7b91c0e7bd9d929c1a321178efd611dad901 ./Microsoft_UEFI_CA_2023.crt
+EOF
+        )"
+        sha1sum -c <<<"${SHA1SUMS}" ||
+            {
+                log_err "Could not verify checksums for MS certs with 'sha1sum'."
+            }
+        sha256sum -c <<<"${SHA256SUMS}" ||
+            {
+                log_err "Could not verify checksums for MS certs with 'sha256sum'."
+            }
+        cat ./Microsoft_Corporation_UEFI_CA_2011.crt ./Microsoft_Option_ROM_UEFI_CA_2023.crt ./Microsoft_UEFI_CA_2023.crt >MS_cert_bundle_db.crt
         ## Create EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
         ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-        sbsiglist --owner "${MSGUID}" --type x509 --output MS_OpROM_db.esl MS_OpROM_db.crt
+        sbsiglist --owner "${MSGUID}" --type x509 --output MS_cert_bundle_db.esl MS_cert_bundle_db.crt
     fi
 
     # Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
@@ -158,11 +182,11 @@ create)
     sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
     sign-efi-sig-list -g "${GUID}" -k KEK.key -c KEK.crt db db.esl db.auth
 
-    # Generate Certificates in an EFI Signature List for MS_OpROM_db
+    # Generate Certificates in an EFI Signature List for MS_cert_bundle_db
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
         ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-        sign-efi-sig-list -g "${MSGUID}" -k KEK.key -c KEK.crt db MS_OpROM_db.esl MS_OpROM_db.auth
+        sign-efi-sig-list -g "${MSGUID}" -k KEK.key -c KEK.crt db MS_cert_bundle_db.esl MS_cert_bundle_db.auth
     fi
 
     # chmod EFI_KEYS_DIR/keys/*
@@ -194,7 +218,7 @@ enroll)
 
     # Check for keys
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
-        if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]] || ! [[ -f MS_OpROM_db.esl ]]; then
+        if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]] || ! [[ -f MS_cert_bundle_db.esl ]]; then
             exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
         fi
     else
@@ -237,7 +261,7 @@ enroll)
     echo "Enrolling UEFI Secure Boot db key..."
     efi-updatevar -k "${KEK}" -f db.auth db
 
-    # Enroll MS_OpROM_db
+    # Enroll MS_cert_bundle_db
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Change file attributes
         for file in /sys/firmware/efi/efivars/db*; do
@@ -249,8 +273,8 @@ enroll)
             chattr -i "${file}" || true
         done
         ## Enroll
-        echo "Enrolling UEFI Secure Boot MS_OpROM_db key..."
-        efi-updatevar -k "${KEK}" -a -f MS_OpROM_db.auth db
+        echo "Enrolling UEFI Secure Boot MS_cert_bundle_db key..."
+        efi-updatevar -k "${KEK}" -a -f MS_cert_bundle_db.auth db
     fi
 
     # Enroll PK
