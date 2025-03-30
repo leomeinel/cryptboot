@@ -136,7 +136,7 @@ create)
     cert-to-efi-sig-list -g "${GUID}" ./KEK.crt ./KEK.esl
     cert-to-efi-sig-list -g "${GUID}" ./db.crt ./db.esl
 
-    # Obtain MS_cert_bundle_db.crt
+    # Obtain MS_cert_bundle_db.esl
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Save MSGUID
         MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
