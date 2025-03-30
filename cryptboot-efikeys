@@ -229,7 +229,7 @@ enroll)
         fi
     fi
 
-    # Enroll KEK and db
+    # Enroll KEK.auth and db.auth
     ## Change file attributes
     for file in /sys/firmware/efi/efivars/PK*; do
         [[ -f "${file}" ]] ||
@@ -279,7 +279,7 @@ enroll)
         efi-updatevar -k "${KEK}" -a -f ./MS_cert_bundle_db.auth db
     fi
 
-    # Enroll PK
+    # Enroll PK.auth
     echo "Enrolling UEFI Secure Boot PK key..."
     efi-updatevar -k "${PK}" -f ./PK.auth PK
 
