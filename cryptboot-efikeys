@@ -95,7 +95,7 @@ create)
         log_warning "A backup will be created at '${BACKUP_PATH:?}'."
         read -rp "Do you want to delete them and generate new ones? (Type 'yes' in capital letters): " choice
         case "${choice}" in
-        YES)
+        "YES")
             cp -R "${EFI_KEYS_DIR:?}"/keys "${BACKUP_PATH:?}"
             chmod 000 "${BACKUP_PATH:?}"/*
             rm -rf "${EFI_KEYS_DIR:?}"/keys/*
