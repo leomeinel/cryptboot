@@ -115,36 +115,36 @@ create)
 
     # Generate PEM format private keys for EFI binary and EFI signature list signing and PEM format certificates for sbsign(1), sbvarsign(1) and sign-efi-sig-list(1) -> .key, .crt
     # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    openssl req -newkey rsa:4096 -nodes -keyout PK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} PK/" -out PK.crt
-    openssl req -newkey rsa:4096 -nodes -keyout KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} KEK/" -out KEK.crt
-    openssl req -newkey rsa:4096 -nodes -keyout db.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} db/" -out db.crt
+    openssl req -newkey rsa:4096 -nodes -keyout ./PK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} PK/" -out ./PK.crt
+    openssl req -newkey rsa:4096 -nodes -keyout ./KEK.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} KEK/" -out ./KEK.crt
+    openssl req -newkey rsa:4096 -nodes -keyout ./db.key -new -x509 -sha256 -days 3650 -subj "/CN=${NAME} db/" -out ./db.crt
 
     # Generate DER format certificates for firmware -> .cer
     # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    openssl x509 -outform DER -in PK.crt -out PK.cer
-    openssl x509 -outform DER -in KEK.crt -out KEK.cer
-    openssl x509 -outform DER -in db.crt -out db.cer
+    openssl x509 -outform DER -in ./PK.crt -out ./PK.cer
+    openssl x509 -outform DER -in ./KEK.crt -out ./KEK.cer
+    openssl x509 -outform DER -in ./db.crt -out ./db.cer
 
     # Create a GUID for owner identification
     # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
     GUID="$(uuidgen --random)"
-    echo "${GUID}" >GUID
+    echo "${GUID}" >./GUID
 
     # Generate Certificates in an EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
     # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    cert-to-efi-sig-list -g "${GUID}" PK.crt PK.esl
-    cert-to-efi-sig-list -g "${GUID}" KEK.crt KEK.esl
-    cert-to-efi-sig-list -g "${GUID}" db.crt db.esl
+    cert-to-efi-sig-list -g "${GUID}" ./PK.crt ./PK.esl
+    cert-to-efi-sig-list -g "${GUID}" ./KEK.crt ./KEK.esl
+    cert-to-efi-sig-list -g "${GUID}" ./db.crt ./db.esl
 
     # Obtain MS_cert_bundle_db.crt
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Save MSGUID
         MSGUID="77fa9abd-0359-4d32-bd60-28f4e78f784b"
-        echo "${MSGUID}" >MSGUID
+        echo "${MSGUID}" >./MSGUID
         ## curl PEM format certificates for sbsign(1), sbvarsign(1) and sign-efi-sig-list(1) -> .crt
-        curl -Ls https://go.microsoft.com/fwlink/p/?linkid=321194 >Microsoft_Corporation_UEFI_CA_2011.crt
-        curl -Ls https://go.microsoft.com/fwlink/?linkid=2239872 >Microsoft_UEFI_CA_2023.crt
-        curl -Ls https://go.microsoft.com/fwlink/?linkid=2284009 >Microsoft_Option_ROM_UEFI_CA_2023.crt
+        curl -Ls https://go.microsoft.com/fwlink/p/?linkid=321194 >./Microsoft_Corporation_UEFI_CA_2011.crt
+        curl -Ls https://go.microsoft.com/fwlink/?linkid=2239872 >./Microsoft_UEFI_CA_2023.crt
+        curl -Ls https://go.microsoft.com/fwlink/?linkid=2284009 >./Microsoft_Option_ROM_UEFI_CA_2023.crt
         SHA1SUMS="$(
             cat <<'EOF'
 46def63b5ce61cf8ba0de2e6639c1019d0ed14f3 ./Microsoft_Corporation_UEFI_CA_2011.crt
@@ -167,26 +167,26 @@ EOF
             {
                 log_err "Could not verify checksums for MS certs with 'sha256sum'."
             }
-        cat ./Microsoft_Corporation_UEFI_CA_2011.crt ./Microsoft_Option_ROM_UEFI_CA_2023.crt ./Microsoft_UEFI_CA_2023.crt >MS_cert_bundle_db.crt
+        cat ./Microsoft_Corporation_UEFI_CA_2011.crt ./Microsoft_Option_ROM_UEFI_CA_2023.crt ./Microsoft_UEFI_CA_2023.crt >./MS_cert_bundle_db.crt
         ## Create EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
         ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-        sbsiglist --owner "${MSGUID}" --type x509 --output MS_cert_bundle_db.esl MS_cert_bundle_db.crt
+        sbsiglist --owner "${MSGUID}" --type x509 --output ./MS_cert_bundle_db.esl ./MS_cert_bundle_db.crt
     fi
 
     # Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
     # See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt PK PK.esl PK.auth
+    sign-efi-sig-list -g "${GUID}" -k ./PK.key -c ./PK.crt PK ./PK.esl ./PK.auth
     ## Sign an empty file to allow removing Platform Key when in "User Mode"
     ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-    sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt PK /dev/null PK_null.auth
-    sign-efi-sig-list -g "${GUID}" -k PK.key -c PK.crt KEK KEK.esl KEK.auth
-    sign-efi-sig-list -g "${GUID}" -k KEK.key -c KEK.crt db db.esl db.auth
+    sign-efi-sig-list -g "${GUID}" -k ./PK.key -c ./PK.crt PK /dev/null ./PK_null.auth
+    sign-efi-sig-list -g "${GUID}" -k ./PK.key -c ./PK.crt KEK ./KEK.esl ./KEK.auth
+    sign-efi-sig-list -g "${GUID}" -k ./KEK.key -c ./KEK.crt db ./db.esl ./db.auth
 
     # Generate Certificates in an EFI Signature List for MS_cert_bundle_db
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
         ## Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
         ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-        sign-efi-sig-list -g "${MSGUID}" -k KEK.key -c KEK.crt db MS_cert_bundle_db.esl MS_cert_bundle_db.auth
+        sign-efi-sig-list -g "${MSGUID}" -k ./KEK.key -c ./KEK.crt db ./MS_cert_bundle_db.esl ./MS_cert_bundle_db.auth
     fi
 
     # chmod EFI_KEYS_DIR/keys/*
@@ -218,11 +218,11 @@ enroll)
 
     # Check for keys
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
-        if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]] || ! [[ -f MS_cert_bundle_db.esl ]]; then
+        if ! [[ -f ./KEK.esl ]] || ! [[ -f ./db.esl ]] || ! [[ -f ./PK.auth ]] || ! [[ -f ./MS_cert_bundle_db.esl ]]; then
             exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
         fi
     else
-        if ! [[ -f KEK.esl ]] || ! [[ -f db.esl ]] || ! [[ -f PK.auth ]]; then
+        if ! [[ -f ./KEK.esl ]] || ! [[ -f ./db.esl ]] || ! [[ -f ./PK.auth ]]; then
             exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
         fi
     fi
@@ -257,9 +257,9 @@ enroll)
     efi-updatevar -d 0 -k "${PK}" PK || true
     ## Enroll
     echo "Enrolling UEFI Secure Boot KEK key..."
-    efi-updatevar -k "${PK}" -f KEK.auth KEK
+    efi-updatevar -k "${PK}" -f ./KEK.auth KEK
     echo "Enrolling UEFI Secure Boot db key..."
-    efi-updatevar -k "${KEK}" -f db.auth db
+    efi-updatevar -k "${KEK}" -f ./db.auth db
 
     # Enroll MS_cert_bundle_db
     if [[ "${ENABLE_OPROM}" == "true" ]]; then
@@ -274,12 +274,12 @@ enroll)
         done
         ## Enroll
         echo "Enrolling UEFI Secure Boot MS_cert_bundle_db key..."
-        efi-updatevar -k "${KEK}" -a -f MS_cert_bundle_db.auth db
+        efi-updatevar -k "${KEK}" -a -f ./MS_cert_bundle_db.auth db
     fi
 
     # Enroll PK
     echo "Enrolling UEFI Secure Boot PK key..."
-    efi-updatevar -k "${PK}" -f PK.auth PK
+    efi-updatevar -k "${PK}" -f ./PK.auth PK
 
     # Notify user if script has finished successfully
     echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' enrolled to UEFI firmware."
@@ -292,15 +292,15 @@ sign)
     check_arg "file" "${FILENAME}"
 
     # Check for keys
-    if ! [[ -f db.key ]] || ! [[ -f db.crt ]]; then
+    if ! [[ -f ./db.key ]] || ! [[ -f ./db.crt ]]; then
         exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
     fi
 
     # Sign FILENAME
-    sbverify --cert db.crt "${FILENAME}" ||
+    sbverify --cert ./db.crt "${FILENAME}" ||
         {
             echo "Signing file '${FILENAME}' with UEFI Secure Boot keys..."
-            sbsign --key db.key --cert db.crt --output "${FILENAME}" "${FILENAME}"
+            sbsign --key ./db.key --cert ./db.crt --output "${FILENAME}" "${FILENAME}"
 
             ## Synchronize cached writes to persistent storage
             sync
@@ -313,7 +313,7 @@ verify)
     check_arg "file" "${FILENAME}"
 
     # Check for keys
-    if ! [[ -f db.crt ]]; then
+    if ! [[ -f ./db.crt ]]; then
         exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
     fi
 
@@ -324,7 +324,7 @@ verify)
 
     # Verify FILENAME
     echo "Verifying signature with UEFI Secure Boot keys..."
-    sbverify --cert db.crt "${FILENAME}"
+    sbverify --cert ./db.crt "${FILENAME}"
     ;;
 list)
     # List all UEFI Secure Boot keys enrolled in your UEFI firmware
