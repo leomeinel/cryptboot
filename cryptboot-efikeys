@@ -175,6 +175,16 @@ create)
     echo "New UEFI Secure Boot keys created in '${EFI_KEYS_DIR:?}/keys'."
     ;;
 enroll)
+    read -rp "Do you understand that this can brick your device? Aborting now leaves secureboot disabled. (Type 'yes i understand' in capital letters): " choice
+    case "${choice}" in
+    "YES I UNDERSTAND")
+        echo "Enrolling UEFI Secure Boot keys..."
+        ;;
+    *)
+        log_err "User aborted enrolling secureboot keys."
+        exit 1
+        ;;
+    esac
     # cd to EFI_KEYS_DIR/keys and check arguments
     check_cd "${EFI_KEYS_DIR:?}/keys"
     PK="${2}"
