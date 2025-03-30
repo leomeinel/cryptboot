@@ -167,10 +167,12 @@ EOF
             {
                 log_err "Could not verify checksums for MS certs with 'sha256sum'."
             }
-        cat ./Microsoft_Corporation_UEFI_CA_2011.crt ./Microsoft_Option_ROM_UEFI_CA_2023.crt ./Microsoft_UEFI_CA_2023.crt >./MS_cert_bundle_db.crt
         ## Create EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
         ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
-        sbsiglist --owner "${MSGUID}" --type x509 --output ./MS_cert_bundle_db.esl ./MS_cert_bundle_db.crt
+        sbsiglist --owner "${MSGUID}" --type x509 --output ./Microsoft_Corporation_UEFI_CA_2011.esl ./Microsoft_Corporation_UEFI_CA_2011.crt
+        sbsiglist --owner "${MSGUID}" --type x509 --output ./Microsoft_Option_ROM_UEFI_CA_2023.esl ./Microsoft_Option_ROM_UEFI_CA_2023.crt
+        sbsiglist --owner "${MSGUID}" --type x509 --output ./Microsoft_UEFI_CA_2023.esl ./Microsoft_UEFI_CA_2023.crt
+        cat ./Microsoft_Corporation_UEFI_CA_2011.esl ./Microsoft_Option_ROM_UEFI_CA_2023.esl ./Microsoft_UEFI_CA_2023.esl >./MS_cert_bundle_db.esl
     fi
 
     # Generate Certificates in an EFI Signature List with an authentication header (i.e. a signed certificate update file) for efi-updatevar(1), sbkeysync, KeyTool and firmware -> .auth
