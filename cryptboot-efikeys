@@ -40,6 +40,9 @@ exit_no_keys() {
 var_invalid_warning() {
     log_warning "'${1}' is invalid in '${2}'."
 }
+var_invalid_err() {
+    log_err "'${1}' is invalid in '${2}'."
+}
 
 # Default path for cryptboot.conf
 CONFIGURATION_FILE=/etc/cryptboot.conf
@@ -298,15 +301,23 @@ sign)
         exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
     fi
 
-    # Sign FILENAME
-    sbverify --cert ./db.crt "${FILENAME}" ||
-        {
-            echo "Signing file '${FILENAME}' with UEFI Secure Boot keys..."
-            sbsign --key ./db.key --cert ./db.crt --output "${FILENAME}" "${FILENAME}"
+    # Sign valid files included in FILENAME
+    for file in ${FILENAME}; do
+        [[ -f "${file}" ]] ||
+            {
+                var_invalid_err "${file}" "${FILENAME}"
+                exit 1
+            }
+        # Sign file
+        sbverify --cert ./db.crt "${file}" ||
+            {
+                echo "Signing file '${file}' with UEFI Secure Boot keys..."
+                sbsign --key ./db.key --cert ./db.crt --output "${file}" "${file}"
+            }
+    done
 
-            ## Synchronize cached writes to persistent storage
-            sync
-        }
+    # Synchronize cached writes to persistent storage
+    sync
     ;;
 verify)
     # cd to EFI_KEYS_DIR/keys and check arguments
@@ -319,14 +330,21 @@ verify)
         exit_no_keys "${EFI_KEYS_DIR:?}/keys" "${0}"
     fi
 
-    # List signatures in FILENAME
-    echo "List of all signatures in '${FILENAME}':"
-    sbverify --list "${FILENAME}"
-    echo ""
-
-    # Verify FILENAME
-    echo "Verifying signature with UEFI Secure Boot keys..."
-    sbverify --cert ./db.crt "${FILENAME}"
+    # Verify valid files included in FILENAME
+    for file in ${FILENAME}; do
+        [[ -f "${file}" ]] ||
+            {
+                var_invalid_err "${file}" "${FILENAME}"
+                exit 1
+            }
+        # List signatures in FILENAME
+        echo "List of all signatures in '${file}':"
+        sbverify --list "${file}"
+        echo ""
+        # Verify FILENAME
+        echo "Verifying signature with UEFI Secure Boot keys..."
+        sbverify --cert ./db.crt "${file}"
+    done
     ;;
 list)
     # List all UEFI Secure Boot keys enrolled in your UEFI firmware
