@@ -16,8 +16,9 @@ set -e
 log_err() {
     /usr/bin/logger -s -p local0.err <<<"$(basename "${0}"): ${*}"
 }
-var_invalid_err() {
+var_invalid_err_exit() {
     log_err "'${1}' is invalid in '${2}'."
+    exit 1
 }
 
 # Default path for cryptboot.conf
@@ -58,17 +59,11 @@ systemd-boot-sign)
     for tmp_dir in "${TO_SIGN[@]}"; do
         dir="${EFI_DIR}"/"${tmp_dir}"
         [[ -d "${dir}" ]] ||
-            {
-                var_invalid_err "${dir}" "TO_SIGN"
-                exit 1
-            }
+            var_invalid_err_exit "${dir}" "TO_SIGN"
         shopt -s nocaseglob
         for file in "${dir}"/*.efi; do
             [[ -f "${file}" ]] ||
-                {
-                    var_invalid_err "${file}" "${dir}/*.efi"
-                    exit 1
-                }
+                var_invalid_err_exit "${file}" "${dir}/*.efi"
             cryptboot-efikeys sign "${file}"
         done
     done

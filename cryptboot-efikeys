@@ -37,11 +37,12 @@ exit_no_keys() {
     log_err "Please generate them first with '${2} create' and then enroll them with '${2} enroll'."
     exit 1
 }
+var_invalid_err_exit() {
+    log_err "'${1}' is invalid in '${2}'."
+    exit 1
+}
 var_invalid_warning() {
     log_warning "'${1}' is invalid in '${2}'."
-}
-var_invalid_err() {
-    log_err "'${1}' is invalid in '${2}'."
 }
 
 # Default path for cryptboot.conf
@@ -165,10 +166,12 @@ EOF
         sha1sum -c <<<"${SHA1SUMS}" ||
             {
                 log_err "Could not verify checksums for MS certs with 'sha1sum'."
+                exit 1
             }
         sha256sum -c <<<"${SHA256SUMS}" ||
             {
                 log_err "Could not verify checksums for MS certs with 'sha256sum'."
+                exit 1
             }
         ## Create EFI Signature List for sbvarsign(1), efi-updatevar(1), KeyTool and firmware -> .esl
         ## See: https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Creating_keys
@@ -304,10 +307,7 @@ sign)
     # Sign valid files included in FILENAME
     for file in ${FILENAME}; do
         [[ -f "${file}" ]] ||
-            {
-                var_invalid_err "${file}" "${FILENAME}"
-                exit 1
-            }
+            var_invalid_err_exit "${file}" "${FILENAME}"
         # Sign file
         sbverify --cert ./db.crt "${file}" ||
             {
@@ -333,10 +333,7 @@ verify)
     # Verify valid files included in FILENAME
     for file in ${FILENAME}; do
         [[ -f "${file}" ]] ||
-            {
-                var_invalid_err "${file}" "${FILENAME}"
-                exit 1
-            }
+            var_invalid_err_exit "${file}" "${FILENAME}"
         # List signatures in FILENAME
         echo "List of all signatures in '${file}':"
         sbverify --list "${file}"
