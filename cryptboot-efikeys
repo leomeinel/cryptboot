@@ -82,7 +82,7 @@ if [[ "${UID}" -ne 0 ]]; then
 fi
 
 case "${1}" in
-create)
+"create")
     # cd to EFI_KEYS_DIR/keys
     checked_cd "${EFI_KEYS_DIR:?}/keys"
 
@@ -206,7 +206,7 @@ EOF
     # Notify user if script has finished successfully
     echo "New UEFI Secure Boot keys created in '${EFI_KEYS_DIR:?}/keys'."
     ;;
-enroll)
+"enroll")
     read -rp "Do you understand that this can brick your device? Aborting now leaves secureboot disabled. (Type 'yes i understand' in capital letters): " choice
     case "${choice}" in
     "YES I UNDERSTAND")
@@ -293,7 +293,7 @@ enroll)
     echo "UEFI Secure Boot keys in '${EFI_KEYS_DIR:?}/keys' enrolled to UEFI firmware."
     echo "You should now sign your boot loader and reboot."
     ;;
-sign)
+"sign")
     # cd to EFI_KEYS_DIR/keys and check arguments
     checked_cd "${EFI_KEYS_DIR:?}/keys"
     FILENAME="${2}"
@@ -319,7 +319,7 @@ sign)
     # Synchronize cached writes to persistent storage
     sync
     ;;
-verify)
+"verify")
     # cd to EFI_KEYS_DIR/keys and check arguments
     checked_cd "${EFI_KEYS_DIR:?}/keys"
     FILENAME="${2}"
@@ -343,12 +343,12 @@ verify)
         sbverify --cert ./db.crt "${file}"
     done
     ;;
-list)
+"list")
     # List all UEFI Secure Boot keys enrolled in your UEFI firmware
     echo "All UEFI Secure Boot keys enrolled in your UEFI firmware:"
     efi-readvar
     ;;
-status)
+"status")
     # Check if UEFI Secure Boot is active or inactive
     echo -n "UEFI Secure Boot status: "
     SECUREBOOT_ENABLED="$(od -An -t u1 --read-bytes=1 --skip-bytes=4 /sys/firmware/efi/efivars/SecureBoot-*)"

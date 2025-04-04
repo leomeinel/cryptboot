@@ -53,7 +53,7 @@ if ! findmnt -sn "${EFI_DIR}" &>/dev/null; then
 fi
 
 case "${1}" in
-systemd-boot-sign)
+"systemd-boot-sign")
     # Sign files in TO_SIGN with UEFI secure boot keys
     echo "Signing kernel with UEFI secure boot keys..."
     for tmp_dir in "${TO_SIGN[@]}"; do
