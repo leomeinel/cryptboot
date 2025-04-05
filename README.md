@@ -105,14 +105,13 @@ Commands:
 
 ```conf
 # EFI System partition mount point (has to be specified in /etc/fstab)
-EFI_DIR="/efi"
+EFI_DIR=/efi
 
 # List of paths with images to sign
-## Format: ("a" "b")
-TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
+TO_SIGN=(EFI/Linux EFI/systemd EFI/BOOT)
 
 # UEFI Secure Boot keys directory
-EFI_KEYS_DIR="/etc/secureboot"
+EFI_KEYS_DIR=/etc/secureboot
 
 # Option ROM
 ## See: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom

@@ -25,11 +25,10 @@ var_invalid_err_exit() {
 CONFIGURATION_FILE=/etc/cryptboot.conf
 
 # EFI System partition mount point (has to be specified in /etc/fstab)
-EFI_DIR="/efi"
+EFI_DIR=/efi
 
 # List of paths with images to sign
-## Format: ("a" "b")
-TO_SIGN=("EFI/Linux" "EFI/systemd" "EFI/BOOT")
+TO_SIGN=(EFI/Linux EFI/systemd EFI/BOOT)
 
 # Source config
 if [[ -f "${CONFIGURATION_FILE}" ]]; then

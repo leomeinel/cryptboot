@@ -49,7 +49,7 @@ var_invalid_warning() {
 CONFIGURATION_FILE=/etc/cryptboot.conf
 
 # UEFI Secure Boot keys directory
-EFI_KEYS_DIR="/etc/secureboot"
+EFI_KEYS_DIR=/etc/secureboot
 
 # Option ROM
 ## See: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom
