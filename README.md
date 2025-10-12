@@ -110,8 +110,8 @@ EFI_DIR=/efi
 # List of paths with images to sign
 TO_SIGN=(
     EFI/BOOT
-    EFI/Linux 
-    EFI/systemd 
+    EFI/Linux
+    EFI/systemd
 )
 
 # UEFI Secure Boot keys directory
